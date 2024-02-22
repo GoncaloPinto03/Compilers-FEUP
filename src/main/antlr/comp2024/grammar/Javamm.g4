@@ -10,60 +10,79 @@ LCURLY : '{' ;
 RCURLY : '}' ;
 LPAREN : '(' ;
 RPAREN : ')' ;
+LRECT : '[' ;
+RRECT : ']' ;
 MUL : '*' ;
+DIV : '/' ;
 ADD : '+' ;
+SUB : '-' ;
 
 CLASS : 'class' ;
 INT : 'int' ;
 PUBLIC : 'public' ;
 RETURN : 'return' ;
 
-INTEGER : [0-9] ;
-ID : [a-zA-Z]+ ;
+INTEGER : [0-9]+ ;
+ID : [a-zA-Z0-9_$]+ ;
+
+COMMENT_SINGLE : '//' ;
+COMMENT_MULTI : '/*' | '*/' ;
 
 WS : [ \t\n\r\f]+ -> skip ;
 
 program
-    : classDecl EOF
+    : (importDeclaration)* classDeclaration EOF
     ;
 
-
-classDecl
-    : CLASS name=ID
-        LCURLY
-        methodDecl*
-        RCURLY
+importDeclaration
+    : 'import' ID ( '.' ID )* ';'
     ;
 
-varDecl
-    : type name=ID SEMI
+classDeclaration
+    : 'class' ID ( 'extends' ID )? LCURLY ( varDeclaration )* ( methodDeclaration )* RCURLY
+    ;
+
+varDeclaration
+    : type ID ';'
+    ;
+
+methodDeclaration
+    : ('public')? type ID LPAREN ( type ID ( ',' type ID )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* 'return' expression ';' RCURLY
+    | ('public')? 'static' 'void' 'main' LPAREN 'String' LRECT RRECT ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY
     ;
 
 type
-    : name= INT ;
-
-methodDecl locals[boolean isPublic=false]
-    : (PUBLIC {$isPublic=true;})?
-        type name=ID
-        LPAREN param RPAREN
-        LCURLY varDecl* stmt* RCURLY
+    : 'int' LRECT RRECT
+    | 'int' '...'
+    | 'boolean'
+    | 'int'
+    | ID
     ;
 
-param
-    : type name=ID
+statement
+    : LCURLY ( statement )* RCURLY
+    | 'if' LPAREN expression RPAREN statement 'else' statement
+    | 'while' LPAREN expression RPAREN statement
+    | expression ';'
+    | ID '=' expression ';'
+    | ID LRECT expression RRECT '=' expression ';'
     ;
 
-stmt
-    : expr EQUALS expr SEMI #AssignStmt //
-    | RETURN expr SEMI #ReturnStmt
+expression
+    : expression ('&&' | '<' | '+' | '-' | '*' | '/' ) expression
+    | expression LRECT expression RRECT
+    | expression '.' 'length'
+    | expression '.' ID LPAREN ( expression ( ',' expression )* )? RPAREN
+    | 'new' 'int' LRECT expression RRECT
+    | 'new' ID LPAREN RPAREN
+    | '!' expression
+    | LPAREN expression RPAREN
+    | LRECT ( expression ( ',' expression )* )? RRECT
+    | INT
+    | 'true'
+    | 'false'
+    | ID
+    | 'this'
     ;
-
-expr
-    : expr op= MUL expr #BinaryExpr //
-    | expr op= ADD expr #BinaryExpr //
-    | value=INTEGER #IntegerLiteral //
-    | name=ID #VarRefExpr //
-    ;
-
 
 
