@@ -39,7 +39,7 @@ program
     ;
 
 importDeclaration
-    : 'import' ID ( '.' ID )* ';'
+    : 'import' importValue+=ID ('.' importValue+=ID )* ';'
     ;
 
 classDeclaration

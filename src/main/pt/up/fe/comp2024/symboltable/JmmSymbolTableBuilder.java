@@ -7,15 +7,14 @@ import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static pt.up.fe.comp2024.ast.Kind.METHOD_DECL;
 import static pt.up.fe.comp2024.ast.Kind.VAR_DECL;
 
 public class JmmSymbolTableBuilder {
+
+
 
 
     public static JmmSymbolTable build(JmmNode root) {
@@ -24,12 +23,33 @@ public class JmmSymbolTableBuilder {
         SpecsCheck.checkArgument(Kind.CLASS_DECL.check(classDecl), () -> "Expected a class declaration: " + classDecl);
         String className = classDecl.get("name");
 
+        var imports = buildImports(root);
         var methods = buildMethods(classDecl);
         var returnTypes = buildReturnTypes(classDecl);
         var params = buildParams(classDecl);
         var locals = buildLocals(classDecl);
 
-        return new JmmSymbolTable(className, methods, returnTypes, params, locals);
+        return new JmmSymbolTable(className,imports , methods, returnTypes, params, locals);
+    }
+
+    public static String dealWithImport(JmmNode jmmNode){
+        String importList = jmmNode.get("importValue"); // import List comes as String
+        String importStr = importList.substring(1, importList.length()-1); // need to remove [ and ]
+        String _import = String.join(".", importStr.split(", ")); // split each import and join them
+
+        return _import;
+    }
+    private static List<String> buildImports(JmmNode root) {
+
+        List<String> imports = new ArrayList<>();
+
+        root.getChildren("Import").stream()
+                .forEach(importNode -> {
+                    String _import = dealWithImport(importNode);
+                    imports.add(_import);
+                });
+
+        return imports;
     }
 
     private static Map<String, Type> buildReturnTypes(JmmNode classDecl) {
