@@ -14,9 +14,6 @@ import static pt.up.fe.comp2024.ast.Kind.VAR_DECL;
 
 public class JmmSymbolTableBuilder {
 
-
-
-
     public static JmmSymbolTable build(JmmNode root) {
 
         var classDecl = root.getJmmChild(0);
@@ -63,17 +60,53 @@ public class JmmSymbolTableBuilder {
         return map;
     }
 
+//    private static Map<String, List<Symbol>> buildParams(JmmNode classDecl) {
+//        // TODO: Simple implementation that needs to be expanded
+//
+//        Map<String, List<Symbol>> map = new HashMap<>();
+//
+//        var intType = new Type(TypeUtils.getIntTypeName(), false);
+//
+//        classDecl.getChildren(METHOD_DECL).stream()
+//                .forEach(method -> map.put(method.get("name"), Arrays.asList(new Symbol(intType, method.getJmmChild(1).get("name")))));
+//
+//        return map;
+//    }
+
     private static Map<String, List<Symbol>> buildParams(JmmNode classDecl) {
-        // TODO: Simple implementation that needs to be expanded
+        Map<String, List<Symbol>> params = new HashMap<>();
 
-        Map<String, List<Symbol>> map = new HashMap<>();
+        for (var methodDecl : classDecl.getChildren(METHOD_DECL)) {
+            List<Symbol> paramList = new ArrayList<>();
 
-        var intType = new Type(TypeUtils.getIntTypeName(), false);
-
-        classDecl.getChildren(METHOD_DECL).stream()
-                .forEach(method -> map.put(method.get("name"), Arrays.asList(new Symbol(intType, method.getJmmChild(1).get("name")))));
-
-        return map;
+            for (var param : methodDecl.getChildren("Param")) {
+                String name = param.get("name");
+                List<String> parameters = param.getObjectAsList("name",String.class);
+                for (int i = 0; i < param.getChildren().size(); i++) {
+                    var some = param.getChild(i);
+                    String type = some.getKind();
+                    switch (type) {
+                        case "IntArrayType":
+                            paramList.add(new Symbol(new Type(some.get("tName"), true), parameters.get(i)));
+                            break;
+                        case "IntType":
+                            paramList.add(new Symbol(new Type(some.get("tName"), false), parameters.get(i)));
+                            break;
+                        case "BoolType":
+                            paramList.add(new Symbol(new Type(some.get("tName"), false), parameters.get(i)));
+                            break;
+                        case "StringType":
+                            paramList.add(new Symbol(new Type(some.get("tName"), false), parameters.get(i)));
+                            break;
+                        default:
+                            paramList.add(new Symbol(new Type(some.get("type"), false), parameters.get(i)));
+                            break;
+                    }
+                }
+            }
+            params.put(methodDecl.get("name"), new ArrayList<>(paramList));
+        }
+        return params;
     }
 
     private static Map<String, List<Symbol>> buildLocals(JmmNode classDecl) {
