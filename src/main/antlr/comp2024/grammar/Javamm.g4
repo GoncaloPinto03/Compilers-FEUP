@@ -81,29 +81,26 @@ statement
     | var=ID '=' expression ';'
     | var=ID LRECT expression RRECT '=' expression ';'
     ;
-parameter
-    : expression (',' expression) *
-    ;
 
 expression
-    : '(' expression ')'
-    | 'new' 'int' '[' expression ']'
-    | 'new' classname=ID '(' (expression (',' expression) *)? ')'
-    | expression '[' expression ']'
-    | name=ID '(' parameter? ')'
-    | expression '.' name=ID '(' parameter? ')'
+    : LPAREN expression RPAREN
+    | 'new' 'int' LRECT expression RRECT
+    | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN
+    | expression LRECT expression RRECT
+    | expression '.' value=ID LPAREN (expression (',' expression) *)? RPAREN
     | expression '.' 'length'
     | value = 'this'
     | value = '!' expression
     | expression op=('*' | '/') expression
     | expression op=('+' | '-') expression
     | expression op=('<' | '>') expression
-    | expression op=('<=' | '>=' | '==' | '!=' | '+=' | '-=' | '*=' | '/=') expression
-    | expression op='&&' expression
-    | expression op='||' expression
+    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression
+    | expression op=('&&' | '||') expression
+    | className=ID expression
+    | LRECT ( expression ( ',' expression )* )? RRECT
     | value=INTEGER
-    | value = 'true'
-    | value = 'false'
+    | value='true'
+    | value='false'
     | value=ID
     | value=ID op=('++' | '--')
     ;
