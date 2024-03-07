@@ -35,29 +35,28 @@ COMMENT_MULTI : ('/*' | '*/')+ -> skip ;    // multi line comment
 WS : [ \t\n\r\f]+ -> skip ;
 
 program
-    : (importDeclaration)* classDeclaration EOF
+    : (importDeclaration)* classDecl EOF
     ;
 
 importDeclaration
     : 'import' importValue+=ID ('.' importValue+=ID )* ';'
     ;
 
-classDeclaration
-    : 'class' ID ( 'extends' ID )? LCURLY ( varDeclaration )* ( methodDeclaration )* RCURLY
+classDecl
+    : 'class' name=ID ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY
     ;
 
 varDeclaration
     : type ID ';'
     ;
 
-methodDeclaration
-    : ('public')? type mname+=ID LPAREN ( type pname+=ID ( ',' type pname+=ID )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* 'return' expression ';' RCURLY
-    | ('public')? 'static' 'void' 'main' LPAREN 'String' LRECT RRECT name+=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY
+methodDecl
+    : ('public')? type name=ID LPAREN ( type pname+=ID ( ',' type pname+=ID )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* 'return' expression ';' RCURLY
+    | ('public')? 'static' type name='main' LPAREN 'String' LRECT RRECT aname+=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY
     ;
 
-type
-    : type LRECT RRECT          // array
-    | value='int' '...'         // variable number of integers
+type locals [boolean isArray = false]
+    : value='int' ('['{$isArray = true;}']')?         // variable number of integers
     | value='boolean'           // boolean
     | value='int'               // integer
     | value='double'            // double
@@ -67,6 +66,7 @@ type
     | value='byte'              // byte
     | value='short'             // short
     | value='long'              // long
+    | value='void'
     | value=ID                  // id
     ;
 
