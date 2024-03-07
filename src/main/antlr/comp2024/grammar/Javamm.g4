@@ -60,18 +60,18 @@ param:
     ;
 
 type locals [boolean isArray = false]
-    : value='int' ('['{$isArray = true;}']')?         // variable number of integers
-    | value='boolean'           // boolean
-    | value='int'               // integer
-    | value='double'            // double
-    | value='float'             // float
-    | value='String'            // string
-    | value='char'              // char
-    | value='byte'              // byte
-    | value='short'             // short
-    | value='long'              // long
-    | value='void'
-    | value=ID                  // id
+    : value='int' ('['{$isArray = true;}']')?   // variable number of integers
+    | value='int' ('...')?
+    | value='boolean'                           // boolean
+    | value='double'                            // double
+    | value='float'                             // float
+    | value='String'                            // string
+    | value='char'                              // char
+    | value='byte'                              // byte
+    | value='short'                             // short
+    | value='long'                              // long
+    | value='void'                              // void
+    | value=ID                                  // id
     ;
 
 statement
