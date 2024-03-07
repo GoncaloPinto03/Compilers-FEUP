@@ -25,7 +25,7 @@ CLASS : 'class' ;
 PUBLIC : 'public' ;
 RETURN : 'return' ;
 
-INTEGER : ('0' | [1-9][0-9]*);  // integer
+INT : [0] | ([1-9][0-9]*) ;
 ID : [a-zA-Z0-9_$]+ ;   // id
 
 COMMENT_SINGLE : '//' .*? '\n' -> skip ;    // single line comment
@@ -98,7 +98,7 @@ expression
     | expression op=('&&' | '||') expression
     | className=ID expression
     | LRECT ( expression ( ',' expression )* )? RRECT
-    | value=INTEGER
+    | value=INT
     | value='true'
     | value='false'
     | value=ID
