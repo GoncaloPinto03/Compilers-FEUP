@@ -51,7 +51,7 @@ varDeclaration
 
 methodDecl
     : ('public')? type name=ID LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* 'return' expression ';' RCURLY
-    | ('public')? 'static'  type name='main' LPAREN 'String' LRECT RRECT aname+=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY
+    | ('public')? 'static'  type name='main' LPAREN 'String' LRECT RRECT aname=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY
     ;
 
 param:
