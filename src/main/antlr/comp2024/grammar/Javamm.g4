@@ -26,7 +26,7 @@ PUBLIC : 'public' ;
 RETURN : 'return' ;
 
 INT : [0] | ([1-9][0-9]*) ;
-ID : [a-zA-Z0-9_$]+ ;   // id
+ID : [a-zA-Z_$][a-zA-Z$0-9_]*;   // id
 
 COMMENT_SINGLE : '//' .*? '\n' -> skip ;    // single line comment
 COMMENT_MULTI : '/*' .*? '*/' -> skip ;     // multi line comment
