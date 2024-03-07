@@ -29,8 +29,8 @@ RETURN : 'return' ;
 INTEGER : [0-9]+ ;      // integer
 ID : [a-zA-Z0-9_$]+ ;   // id
 
-COMMENT_SINGLE : ('//')+ -> skip ;          // single line comment
-COMMENT_MULTI : ('/*' | '*/')+ -> skip ;    // multi line comment
+COMMENT_SINGLE : '//' .*? '\n' -> skip ;    // single line comment
+COMMENT_MULTI : '/*' .*? '*/' -> skip ;     // multi line comment
 
 WS : [ \t\n\r\f]+ -> skip ;
 
@@ -84,24 +84,24 @@ statement
     ;
 
 expression
-    : expression op=('*' | '/') expression
+    : LPAREN expression RPAREN
+    | 'new' 'int' LRECT expression RRECT
+    | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN
+    | expression LRECT expression RRECT
+    | expression op=('*' | '/') expression
     | expression op=('+' | '-') expression
     | expression op=('<' | '>') expression
     | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression
     | expression op=('&&' | '||') expression
-    | 'new' 'int' LRECT expression RRECT
-    | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN
-    | expression LRECT expression RRECT
     | className=ID expression
     | expression '.' value=ID LPAREN (expression (',' expression) *)? RPAREN
     | expression '.' 'length'
+    | value = 'this'
     | value = '!' expression
-    | LPAREN expression RPAREN
     | LRECT ( expression ( ',' expression )* )? RRECT
     | value=INTEGER
     | value='true'
     | value='false'
     | value=ID
-    | value = 'this'
     | value=ID op=('++' | '--')
     ;
