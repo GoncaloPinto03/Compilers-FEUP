@@ -47,12 +47,16 @@ classDecl
     ;
 
 varDeclaration
-    : type ID ';'
+    : type name=ID ';'
     ;
 
 methodDecl
-    : ('public')? type name=ID LPAREN ( type pname+=ID ( ',' type pname+=ID )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* 'return' expression ';' RCURLY
+    : ('public')? type name=ID LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* 'return' expression ';' RCURLY
     | ('public')? 'static' type name='main' LPAREN 'String' LRECT RRECT aname+=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY
+    ;
+
+param:
+    type name=ID
     ;
 
 type locals [boolean isArray = false]

@@ -66,9 +66,7 @@ public class JmmSymbolTableBuilder {
 
         }
 
-
         return map;
-
     }
 
     // implment get type
@@ -85,37 +83,15 @@ public class JmmSymbolTableBuilder {
 
             for (var param : methodDecl.getChildren("Param")) {
                 String name = param.get("name");
-                List<String> parameters = param.getObjectAsList("name",String.class);
-                for (int i = 0; i < param.getChildren().size(); i++) {
-                    var some = param.getChild(i);
-                    String type = some.getKind();
-                    switch (type) {
-                        case "IntArrayType":
-                            paramList.add(new Symbol(new Type(some.get("tName"), true), parameters.get(i)));
-                            break;
-                        case "IntType":
-                            paramList.add(new Symbol(new Type(some.get("tName"), false), parameters.get(i)));
-                            break;
-                        case "BoolType":
-                            paramList.add(new Symbol(new Type(some.get("tName"), false), parameters.get(i)));
-                            break;
-                        case "StringType":
-                            paramList.add(new Symbol(new Type(some.get("tName"), false), parameters.get(i)));
-                            break;
-                        default:
-                            paramList.add(new Symbol(new Type(some.get("type"), false), parameters.get(i)));
-                            break;
-                    }
-                }
+                Type type = getType(param.getChildren(TYPE).get(0));
+                paramList.add(new Symbol(type, name));
             }
-            params.put(methodDecl.get("name"), new ArrayList<>(paramList));
+            params.put(methodDecl.get("name"), paramList);
         }
         return params;
     }
 
     private static Map<String, List<Symbol>> buildLocals(JmmNode classDecl) {
-        return null;
-        /*
         // TODO: Simple implementation that needs to be expanded
 
         Map<String, List<Symbol>> map = new HashMap<>();
@@ -126,7 +102,6 @@ public class JmmSymbolTableBuilder {
 
         return map;
 
-         */
     }
 
     private static List<String> buildMethods(JmmNode classDecl) {
@@ -137,22 +112,28 @@ public class JmmSymbolTableBuilder {
     }
 
      private static List<Symbol> buildFields(JmmNode classDecl) {
-         return classDecl.getChildren(VAR_DECL).stream().map(JmmSymbolTableBuilder::createSymbolFromVarDecl).collect(Collectors.toList());
-     }
+         // TODO: Simple implementation that needs to be expanded
 
-       private static Symbol createSymbolFromVarDecl(JmmNode varDecl) {
-           Type type = new Type(varDecl.getChild(0).get("tname"), varDecl.getChild(0).getObject("isArray", Boolean.class));
-            return new Symbol(type, varDecl.get("varName"));
-       }
+         List<Symbol> symbols = new ArrayList<>();
+
+         for (var variable : classDecl.getChildren("VarDeclaration")) {
+             String name = variable.get("name");
+             Type type = getType(variable.getChildren(TYPE).get(0));
+             symbols.add(new Symbol(type, name));
+         }
+         return symbols;
+     }
 
     private static List<Symbol> getLocalsList(JmmNode methodDecl) {
         // TODO: Simple implementation that needs to be expanded
 
-        var intType = new Type(TypeUtils.getIntTypeName(), false);
+        List<Symbol> symbols = new ArrayList<>();
 
-        return methodDecl.getChildren(VAR_DECL).stream()
-                .map(varDecl -> new Symbol(intType, varDecl.get("name")))
-                .toList();
+        for (var variable : methodDecl.getChildren("VarDeclaration")) {
+            String name = variable.get("name");
+            Type type = getType(variable.getChildren(TYPE).get(0));
+            symbols.add(new Symbol(type, name));
+        }
+        return symbols;
     }
-
 }
