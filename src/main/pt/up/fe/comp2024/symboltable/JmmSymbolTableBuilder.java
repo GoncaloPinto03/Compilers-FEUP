@@ -28,9 +28,6 @@ public class JmmSymbolTableBuilder {
         List<Symbol> fields = buildFields(classDecl);
 
 
-        //SpecsCheck.checkArgument(Kind.CLASS_DECL.check(classDecl), () -> "Expected a class declaration: " + classDecl);
-
-
         return new JmmSymbolTable(className , methods, imports, returnTypes, params, locals, superClass, fields);
 
     }
@@ -69,7 +66,7 @@ public class JmmSymbolTableBuilder {
         return map;
     }
 
-    // implment get type
+
     private static Type getType(JmmNode node) {
         boolean isArray = node.getObject("isArray", Boolean.class);
         return new Type(node.get("value"), isArray);
