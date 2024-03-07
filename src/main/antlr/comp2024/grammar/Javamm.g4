@@ -46,7 +46,7 @@ classDecl
     ;
 
 varDeclaration
-    : type name=ID ';'
+    : type ('main' | name=ID) ';'
     ;
 
 methodDecl
