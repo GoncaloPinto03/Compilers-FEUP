@@ -26,7 +26,7 @@ INT : 'int' ;
 PUBLIC : 'public' ;
 RETURN : 'return' ;
 
-INTEGER : [0-9]+ ;      // integer
+INTEGER : [0] | ([1-9][0-9]*);  // integer
 ID : [a-zA-Z0-9_$]+ ;   // id
 
 COMMENT_SINGLE : '//' .*? '\n' -> skip ;    // single line comment
