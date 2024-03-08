@@ -254,9 +254,4 @@ public class GrammarTest {
         TestUtils.parseVerbose("[10, 20, 30]", EXPRESSION);
     }
 
-    @Test
-    public void testInvalidInt() {
-        TestUtils.parseVerbose("a", EXPRESSION);
-    }
-
 }

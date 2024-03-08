@@ -4,12 +4,8 @@ import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp2024.ast.Kind;
-import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
-
 import java.util.*;
-import java.util.stream.Collectors;
-
 import static pt.up.fe.comp2024.ast.Kind.*;
 
 public class JmmSymbolTableBuilder {
@@ -18,7 +14,6 @@ public class JmmSymbolTableBuilder {
         var classDecl = root.getChildren(CLASS_DECL).get(0);
         SpecsCheck.checkArgument(Kind.CLASS_DECL.check(classDecl), () -> "Expected a class declaration: " + classDecl);
         String className = classDecl.get("name");
-
         var imports = buildImports(root);
         var methods = buildMethods(classDecl);
         var returnTypes = buildReturnTypes(classDecl);
@@ -27,15 +22,13 @@ public class JmmSymbolTableBuilder {
         String superClass = classDecl.getOptional("sname").orElse(null);
         List<Symbol> fields = buildFields(classDecl);
 
-
         return new JmmSymbolTable(className , methods, imports, returnTypes, params, locals, superClass, fields);
-
     }
 
     public static String dealWithImport(JmmNode jmmNode){
-        String importList = jmmNode.get("importValue"); // import List comes as String
-        String importStr = importList.substring(1, importList.length()-1); // need to remove [ and ]
-        String _import = String.join(".", importStr.split(", ")); // split each import and join them
+        String importList = jmmNode.get("importValue");
+        String importStr = importList.substring(1, importList.length()-1);
+        String _import = String.join(".", importStr.split(", "));
 
         return _import;
     }
@@ -66,7 +59,6 @@ public class JmmSymbolTableBuilder {
         return map;
     }
 
-
     private static Type getType(JmmNode node) {
         boolean isArray = node.getObject("isArray", Boolean.class);
         return new Type(node.get("value"), isArray);
@@ -89,8 +81,6 @@ public class JmmSymbolTableBuilder {
     }
 
     private static Map<String, List<Symbol>> buildLocals(JmmNode classDecl) {
-        // TODO: Simple implementation that needs to be expanded
-
         Map<String, List<Symbol>> map = new HashMap<>();
 
 
@@ -98,7 +88,6 @@ public class JmmSymbolTableBuilder {
                 .forEach(method -> map.put(method.get("name"), getLocalsList(method)));
 
         return map;
-
     }
 
     private static List<String> buildMethods(JmmNode classDecl) {
@@ -109,8 +98,6 @@ public class JmmSymbolTableBuilder {
     }
 
      private static List<Symbol> buildFields(JmmNode classDecl) {
-         // TODO: Simple implementation that needs to be expanded
-
          List<Symbol> symbols = new ArrayList<>();
 
          for (var variable : classDecl.getChildren("VarDeclaration")) {
@@ -122,8 +109,6 @@ public class JmmSymbolTableBuilder {
      }
 
     private static List<Symbol> getLocalsList(JmmNode methodDecl) {
-        // TODO: Simple implementation that needs to be expanded
-
         List<Symbol> symbols = new ArrayList<>();
 
         for (var variable : methodDecl.getChildren("VarDeclaration")) {

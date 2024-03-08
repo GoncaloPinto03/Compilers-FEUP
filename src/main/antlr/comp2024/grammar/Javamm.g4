@@ -61,22 +61,23 @@ param:
 type locals [boolean isArray = false]
     : value='int' ('['{$isArray = true;}']')?   // variable number of integers
     | value='int' ('...')?
-    | value='boolean'                           // boolean
-    | value='double'                            // double
-    | value='float'                             // float
+    | value='boolean'                           // Boolean
+    | value='double'                            // Double
+    | value='float'                             // Float
     | value='String'                            // string
     | value='char'                              // char
     | value='byte'                              // byte
     | value='short'                             // short
-    | value='long'                              // long
-    | value='void'                              // void
-    | value=ID                                  // id
+    | value='long'                              // Long
+    | value='void'                              // Void
+    | value=ID                                  // Id
     ;
 
 statement
     : LCURLY ( statement )* RCURLY
     | 'if' LPAREN expression RPAREN statement 'else' statement
     | 'while' LPAREN expression RPAREN statement
+    | 'for' '(' statement expression ';' expression ')' statement
     | expression ';'
     | var=ID '=' expression ';'
     | var=ID LRECT expression RRECT '=' expression ';'

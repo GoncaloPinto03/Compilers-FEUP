@@ -3,8 +3,6 @@ package pt.up.fe.comp2024.symboltable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
-import pt.up.fe.comp2024.ast.TypeUtils;
-import pt.up.fe.specs.util.exceptions.NotImplementedException;
 
 import java.util.Collections;
 import java.util.List;
@@ -68,7 +66,6 @@ public class JmmSymbolTable implements SymbolTable {
 
     @Override
     public Type getReturnType(String methodSignature) {
-        // TODO: Simple implementation that needs to be expanded
         return returnTypes.get(methodSignature);
     }
 
@@ -81,5 +78,4 @@ public class JmmSymbolTable implements SymbolTable {
     public List<Symbol> getLocalVariables(String methodSignature) {
         return Collections.unmodifiableList(locals.get(methodSignature));
     }
-
 }
