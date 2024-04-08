@@ -84,24 +84,25 @@ statement
     ;
 
 expression
-    : LPAREN expression RPAREN
-    | 'new' 'int' LRECT expression RRECT
-    | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN
-    | expression LRECT expression RRECT
-    | expression '.' value=ID LPAREN (expression (',' expression) *)? RPAREN
-    | expression '.' 'length'
-    | value = 'this'
-    | value = '!' expression
-    | expression op=('*' | '/') expression
-    | expression op=('+' | '-') expression
-    | expression op=('<' | '>') expression
-    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression
-    | expression op=('&&' | '||') expression
-    | className=ID expression
-    | LRECT ( expression ( ',' expression )* )? RRECT
-    | value=INT
-    | value='true'
-    | value='false'
-    | value=ID
-    | value=ID op=('++' | '--')
+    : LPAREN expression RPAREN  #Parentesis
+    | 'new' 'int' LRECT expression RRECT #ArrayDeclaration
+    | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN  #NewClass
+    | expression LRECT expression RRECT #arrayAccess
+    | expression '.' value=ID LPAREN (expression (',' expression) *)? RPAREN #FunctionCall
+    | expression '.' 'length' #Length
+    | value = 'this' #Object
+    | value = '!' expression #Negation
+    | expression op=('*' | '/') expression #binaryExpr
+    | expression op=('+' | '-') expression #binaryExpr
+    | expression op=('<' | '>') expression #binaryExpr
+    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #binaryExpr
+    | expression op=('&&' | '||') expression #binaryExpr
+    | className=ID expression # Constructor
+    | LRECT ( expression ( ',' expression )* )? RRECT # ArrayLiteral
+    | value=INT #IntegerLiberal
+    | value='true' #Identifier
+    | value='false' #Identifier
+    | value=ID #Identifier
+    | value=ID op=('++' | '--') #Increment
+    | name = ID #VarRefExpr
     ;
