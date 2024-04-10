@@ -97,8 +97,7 @@ expression
     | expression op=('<' | '>') expression #binaryExpr
     | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #binaryExpr
     | expression op=('&&' | '||') expression #binaryExpr
-    | className=ID expression # Constructor
-    | LRECT ( expression ( ',' expression )* )? RRECT # ArrayLiteral
+    | LRECT ( expression ( ',' expression )* )? RRECT #ArrayLiteral
     | value=INT #IntegerLiberal
     | value='true' #Identifier
     | value='false' #Identifier
