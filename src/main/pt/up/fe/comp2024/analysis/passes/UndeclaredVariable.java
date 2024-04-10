@@ -28,7 +28,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
         addVisit (Kind.BINARY_EXPR, this::visitBinaryExpr );
-        //addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral );
         addVisit("Negation", this::visitNegationExpr);
     }
 
@@ -75,6 +74,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
     private Void visitVarRefExpr(JmmNode varRefExpr, SymbolTable table) {
+        System.out.println("GUGUDADA");
         SpecsCheck.checkNotNull(currentMethod, () -> "Expected current method to be set");
 
         // Check if exists a parameter or variable declaration with the same name as the variable reference
@@ -91,10 +91,13 @@ public class UndeclaredVariable extends AnalysisVisitor {
                 .anyMatch(param -> param.getName().equals(varRefName))) {
             return null;
         }
-
-        // Var is a declared variable, return
         if (table.getLocalVariables(currentMethod).stream()
                 .anyMatch(varDecl -> varDecl.getName().equals(varRefName))) {
+            return null;
+        }
+
+        if(table.getImports().stream()
+                .anyMatch(importDecl -> importDecl.equals(varRefName))){
             return null;
         }
 

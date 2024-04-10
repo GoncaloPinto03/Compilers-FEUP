@@ -103,5 +103,5 @@ expression
     | value='false' #Identifier
     | value=ID #Identifier
     | value=ID op=('++' | '--') #Increment
-    | name = ID #VarRefExpr
+    | name = ID #varRefExpr
     ;
