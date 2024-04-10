@@ -26,9 +26,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
     public void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
+        //System.out.println(Kind.VAR_REF_EXPR.getNodeName());
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
         addVisit (Kind.BINARY_EXPR, this::visitBinaryExpr );
         addVisit("Negation", this::visitNegationExpr);
+
     }
 
 
@@ -69,39 +71,41 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
-        currentMethod = method.get("name");
+        currentMethod = method.get("VarRefExpr");
         return null;
     }
 
     private Void visitVarRefExpr(JmmNode varRefExpr, SymbolTable table) {
-        System.out.println("GUGUDADA");
         SpecsCheck.checkNotNull(currentMethod, () -> "Expected current method to be set");
 
         // Check if exists a parameter or variable declaration with the same name as the variable reference
         var varRefName = varRefExpr.get("name");
 
-        // Var is a field, return
+        // Check if the variable is a field
         if (table.getFields().stream()
-                .anyMatch(param -> param.getName().equals(varRefName))) {
-            return null;
+                .anyMatch(field -> field.getName().equals(varRefName))) {
+            return null; // Variable is a field, return
         }
 
-        // Var is a parameter, return
+        // Check if the variable is a parameter
         if (table.getParameters(currentMethod).stream()
                 .anyMatch(param -> param.getName().equals(varRefName))) {
-            return null;
+            return null; // Variable is a parameter, return
         }
+
+        // Check if the variable is a local variable
         if (table.getLocalVariables(currentMethod).stream()
                 .anyMatch(varDecl -> varDecl.getName().equals(varRefName))) {
-            return null;
+            return null; // Variable is a local variable, return
         }
 
-        if(table.getImports().stream()
-                .anyMatch(importDecl -> importDecl.equals(varRefName))){
-            return null;
+        // Check if the variable is an imported class or package
+        if (table.getImports().stream()
+                .anyMatch(importDecl -> importDecl.endsWith(varRefName))) {
+            return null; // Variable is an imported class or package, return
         }
 
-        // Create error report
+        // Variable does not exist, create error report
         var message = String.format("Variable '%s' does not exist.", varRefName);
         addReport(Report.newError(
                 Stage.SEMANTIC,
@@ -113,6 +117,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         return null;
     }
+
+
+
 
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
         JmmNode arrayExpression = array.getChild(0); // Get the expression representing the array

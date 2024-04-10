@@ -10,6 +10,8 @@ public enum Kind {
     PROGRAM,
     CLASS_DECL,
 
+    FUNCTION_CALL,
+
     ARRAY_ACCESS,
 
     ARRAY_LITERAL,

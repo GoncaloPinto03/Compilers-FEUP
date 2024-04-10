@@ -74,14 +74,16 @@ type locals [boolean isArray = false]
     ;
 
 statement
-    : LCURLY ( statement )* RCURLY
-    | 'if' LPAREN expression RPAREN statement 'else' statement
-    | 'while' LPAREN expression RPAREN statement
-    | 'for' '(' statement expression ';' expression ')' statement
-    | expression ';'
-    | var=ID '=' expression ';'
-    | var=ID LRECT expression RRECT '=' expression ';'
+    : LCURLY ( statement )* RCURLY #BRACKETS
+    | 'if' LPAREN expression RPAREN statement 'else' statement #IF_ELSE_STM
+    | 'while' LPAREN expression RPAREN statement #WHILE_STM
+    | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
+    | expression ';' #EXPR_STM
+    | var=ID '=' expression ';' #ASSIGNMENT_STM
+    | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
     ;
+
+
 
 expression
     : LPAREN expression RPAREN  #Parentesis
@@ -92,16 +94,16 @@ expression
     | expression '.' 'length' #Length
     | value = 'this' #Object
     | value = '!' expression #Negation
-    | expression op=('*' | '/') expression #binaryExpr
-    | expression op=('+' | '-') expression #binaryExpr
-    | expression op=('<' | '>') expression #binaryExpr
-    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #binaryExpr
-    | expression op=('&&' | '||') expression #binaryExpr
+    | expression op=('*' | '/') expression #BinaryExpr
+    | expression op=('+' | '-') expression #BinaryExpr
+    | expression op=('<' | '>') expression #BinaryExpr
+    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #BinaryExpr
+    | expression op=('&&' | '||') expression #BinaryExpr
     | LRECT ( expression ( ',' expression )* )? RRECT #ArrayLiteral
     | value=INT #IntegerLiberal
     | value='true' #Identifier
     | value='false' #Identifier
     | value=ID #Identifier
     | value=ID op=('++' | '--') #Increment
-    | name = ID #varRefExpr
+    | name = ID #VarRefExpr
     ;
