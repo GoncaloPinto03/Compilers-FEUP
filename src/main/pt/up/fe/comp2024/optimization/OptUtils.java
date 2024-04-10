@@ -34,7 +34,7 @@ public class OptUtils {
 
         TYPE.checkOrThrow(typeNode);
 
-        String typeName = typeNode.get("name");
+        String typeName = typeNode.getKind();
 
         return toOllirType(typeName);
     }
@@ -47,7 +47,9 @@ public class OptUtils {
 
         String type = "." + switch (typeName) {
             case "int" -> "i32";
-            default -> throw new NotImplementedException(typeName);
+            case "boolean" -> "boolean";
+            case "void" -> "void";
+            default -> typeName;
         };
 
         return type;
