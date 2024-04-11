@@ -121,12 +121,13 @@ public class JasminGenerator {
                 "";
 
         var methodName = method.getMethodName();
-
+//        ollirResult.getSymbolTable().
         // TODO: Hardcoded param types and return type, needs to be expanded
+        // make function to handle return and parameters type
         code.append("\n.method ").append(modifier).append(methodName).append("(I)I").append(NL);
-        for (var param : method.getParams()) {
-//            var paramName = param.
-        }
+//        for (var param : method.getParams()) {
+////            var paramName = param.
+//        }
 
         // Add limits
         code.append(TAB).append(".limit stack 99").append(NL);
@@ -195,10 +196,27 @@ public class JasminGenerator {
         // apply operation
         var op = switch (binaryOp.getOperation().getOpType()) {
             case ADD -> "iadd";
+            case SUB -> "isub";
             case MUL -> "imul";
+            case DIV -> "idiv";
+            case SHR -> "ishr";
+            case SHL -> "ishl";
+            case SHRR -> "iushr";
+            case XOR -> "ixor";
+            case AND -> "iand";
+            case OR -> "ior";
+            case LTH -> "if_icmplt";
+            case GTH -> "if_icmpgt";
+            case EQ -> "if_icmpeq";
+            case NEQ -> "if_icmpne";
+            case LTE -> "if_icmple";
+            case GTE -> "if_icmpge";
+            case ANDB -> "iand";
+            case ORB -> "ior";
+            case NOTB -> "iconst_m1 \n ixor";
+            case NOT -> "iconst_1 \n ixor";
             default -> throw new NotImplementedException(binaryOp.getOperation().getOpType());
         };
-
         code.append(op).append(NL);
 
         return code.toString();
@@ -206,11 +224,20 @@ public class JasminGenerator {
 
     private String generateReturn(ReturnInstruction returnInst) {
         var code = new StringBuilder();
+        if (returnInst.getOperand() != null) {
+            code.append(generators.apply(returnInst.getOperand()));
 
-        code.append(generators.apply(returnInst.getOperand()));
+            ElementType elementType = returnInst.getReturnType().getTypeOfElement();
+            decideElementTypeForRetStmt(code, elementType);
+        } else {
+            code.append("\n\t\treturn");
+        }
 
+        return code.toString();
+    }
+
+    private void decideElementTypeForRetStmt(StringBuilder code, ElementType elementType) {
         String retType;
-        var elementType = returnInst.getReturnType().getTypeOfElement();
         switch (elementType) {
             case INT32:
                 retType = "ireturn";
@@ -221,12 +248,8 @@ public class JasminGenerator {
             case ARRAYREF:
             case OBJECTREF:
             case CLASS:
-                retType = "areturn";
-                break;
-            case THIS:
-                retType = "areturn";
-                break;
             case STRING:
+            case THIS:
                 retType = "areturn";
                 break;
             case VOID:
@@ -236,7 +259,31 @@ public class JasminGenerator {
                 throw new IllegalArgumentException("Unsupported return type: " + elementType);
         };
         code.append(retType).append(NL);
+    }
 
-        return code.toString();
+    // make similar function parameter = header or return
+    private String decideElementTypeForHeaderStmt(ElementType elementType) {
+        String type;
+        switch (elementType) {
+            case INT32:
+                type = "I";
+                break;
+            case BOOLEAN:
+                type = "Z";
+                break;
+            case ARRAYREF:
+            case OBJECTREF:
+            case CLASS:
+            case STRING:
+            case THIS:
+                type = "A";
+                break;
+            case VOID:
+                type = "";
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported return type: " + elementType);
+        };
+        return type;
     }
 }
