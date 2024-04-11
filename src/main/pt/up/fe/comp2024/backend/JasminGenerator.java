@@ -73,8 +73,12 @@ public class JasminGenerator {
         var className = ollirResult.getOllirClass().getClassName();
         code.append(".class ").append(className).append(NL).append(NL);
 
-        // TODO: Hardcoded to Object, needs to be expanded
-        code.append(".super java/lang/Object").append(NL);
+        // generate superClass name, if it exists
+        var superClass = ollirResult.getOllirClass().getSuperClass();
+        if (superClass == null)
+            code.append(".super java/lang/Object").append(NL);
+        else
+            code.append(".super ").append(superClass).append(NL);
 
         // generate a single constructor method
         var defaultConstructor = """
@@ -120,6 +124,9 @@ public class JasminGenerator {
 
         // TODO: Hardcoded param types and return type, needs to be expanded
         code.append("\n.method ").append(modifier).append(methodName).append("(I)I").append(NL);
+        for (var param : method.getParams()) {
+//            var paramName = param.
+        }
 
         // Add limits
         code.append(TAB).append(".limit stack 99").append(NL);
@@ -200,12 +207,36 @@ public class JasminGenerator {
     private String generateReturn(ReturnInstruction returnInst) {
         var code = new StringBuilder();
 
-        // TODO: Hardcoded to int return type, needs to be expanded
-
         code.append(generators.apply(returnInst.getOperand()));
-        code.append("ireturn").append(NL);
+
+        String retType;
+        var elementType = returnInst.getReturnType().getTypeOfElement();
+        switch (elementType) {
+            case INT32:
+                retType = "ireturn";
+                break;
+            case BOOLEAN:
+                retType = "zreturn";
+                break;
+            case ARRAYREF:
+            case OBJECTREF:
+            case CLASS:
+                retType = "areturn";
+                break;
+            case THIS:
+                retType = "areturn";
+                break;
+            case STRING:
+                retType = "areturn";
+                break;
+            case VOID:
+                retType = "return";
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported return type: " + elementType);
+        };
+        code.append(retType).append(NL);
 
         return code.toString();
     }
-
 }
