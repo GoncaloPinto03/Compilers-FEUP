@@ -75,8 +75,8 @@ type locals [boolean isArray = false]
 
 statement
     : LCURLY ( statement )* RCURLY #BRACKETS
-    | 'if' LPAREN expression RPAREN statement 'else' statement #IF_ELSE_STM
-    | 'while' LPAREN expression RPAREN statement #WHILE_STM
+    | 'if' LPAREN expression RPAREN statement 'else' statement #ConditionStm
+    | 'while' LPAREN expression RPAREN statement #ConditionStm
     | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
     | expression ';' #EXPR_STM
     | var=ID '=' expression ';' #ASSIGNMENT_STM
@@ -101,9 +101,8 @@ expression
     | expression op=('&&' | '||') expression #BinaryExpr
     | LRECT ( expression ( ',' expression )* )? RRECT #ArrayLiteral
     | value=INT #IntegerLiberal
-    | value='true' #Identifier
-    | value='false' #Identifier
-    | value=ID #Identifier
-    | value=ID op=('++' | '--') #Increment
     | name = ID #VarRefExpr
+    | value='false' #Identifier
+    | value='true' #Identifier
+    | value=ID op=('++' | '--') #Increment
     ;

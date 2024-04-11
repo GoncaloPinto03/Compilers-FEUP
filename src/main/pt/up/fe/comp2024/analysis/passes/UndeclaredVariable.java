@@ -9,6 +9,7 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2024.analysis.AnalysisVisitor;
 import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.NodeUtils;
+import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
 import java.util.List;
@@ -26,10 +27,10 @@ public class UndeclaredVariable extends AnalysisVisitor {
     public void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
-        //System.out.println(Kind.VAR_REF_EXPR.getNodeName());
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
         addVisit (Kind.BINARY_EXPR, this::visitBinaryExpr );
-        addVisit("Negation", this::visitNegationExpr);
+        addVisit(Kind.CONDITION_STM, this::visitConditionStm);
+        addVisit(Kind.IDENTIFIER, this::visitBooleanExpr);
 
     }
 
@@ -63,6 +64,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
                 }
             }
 
+        }
+
+        if(node.getKind().equals("BinaryExpr")){
+            String operator = node.get("op");
+            if(operator.equals("+") || operator.equals("-") || operator.equals("*") || operator.equals("/")){
+                return new Type("int", false);
+            }
+            if(operator.equals("&&") || operator.equals("||")){
+                return new Type("boolean", false);
+            }
 
         }
         return new Type(node.getKind(), false);
@@ -71,7 +82,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
-        currentMethod = method.get("VarRefExpr");
+        currentMethod = method.get("name");
         return null;
     }
 
@@ -119,6 +130,26 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
+    private Void visitBooleanExpr (JmmNode node, SymbolTable table){
+        JmmNode leftExpr = node.getChild(0);
+        JmmNode rightExpr = node.getChild(1);
+
+
+        Type leftType = getNodeType(leftExpr,table);
+        Type rightType = getNodeType(rightExpr,table);
+
+        if(!leftType.getName().equals("boolean") || !rightType.getName().equals("boolean")){
+            String message = "Invalid";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+        return null;
+    }
+
 
 
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
@@ -155,7 +186,23 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
-    private Void visitNegationExpr(JmmNode node, SymbolTable table){
+    private Void visitConditionStm (JmmNode node, SymbolTable table){
+        JmmNode condition = node.getChild(0);
+        Type conditionType = getNodeType(condition, table);
+        if(!conditionType.getName().equals("boolean")){
+            String message = "Invalid";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+        return null;
+    }
+
+
+    /*private Void visitNegationExpr(JmmNode node, SymbolTable table){
         node.put("type", "boolean");
         if(!node.getChild(0).get("type").equals("boolean")){
             String message = "Invalid";
@@ -168,22 +215,20 @@ public class UndeclaredVariable extends AnalysisVisitor {
         }
 
         return null;
-    }
+    }*/
 
 
     private Void visitBinaryExpr(JmmNode node, SymbolTable table) {
-        // Get the left and right expressions of the binary expression
-        JmmNode leftExpression = node.getChild(0);
-        JmmNode rightExpression = node.getChild(1);
+        JmmNode leftExpr = node.getChild(0);
+        JmmNode rightExpr = node.getChild(1);
 
-        // Get the types of the left and right expressions
-        Type leftType = getNodeType(leftExpression, table);
-        Type rightType = getNodeType(rightExpression, table);
+
+        Type leftType = getNodeType(leftExpr,table);
+        Type rightType = getNodeType(rightExpr,table);
 
         // Check if the types are compatible for the binary operation
-        // For the sake of this example, let's assume we're only dealing with arithmetic expressions
-        if (!leftType.getName().equals("int")) {
-            var message = String.format("Left operand of binary expression must be of type int, found '%s'.", leftType.getName());
+        if (!(leftType.getName().equals("IntegerLiberal") || leftType.getName().equals("int")) || leftType.isArray()) {
+            String message =("The type of left operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),
@@ -192,8 +237,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
 
-        if (!rightType.getName().equals("int")) {
-            var message = String.format("Right operand of binary expression must be of type int, found '%s'.", rightType.getName());
+        if (!(rightType.getName().equals("IntegerLiberal") || rightType.getName().equals("int")) || rightType.isArray()) {
+            String message =("The type of right operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),

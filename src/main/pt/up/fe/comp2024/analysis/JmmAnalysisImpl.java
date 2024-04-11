@@ -35,6 +35,7 @@ public class JmmAnalysisImpl implements JmmAnalysis {
 
         // Visit all nodes in the AST
         for (var analysisPass : analysisPasses) {
+
             try {
                 var passReports = analysisPass.analyze(rootNode, table);
                 reports.addAll(passReports);
@@ -48,6 +49,7 @@ public class JmmAnalysisImpl implements JmmAnalysis {
             }
 
         }
+        System.out.println(reports);
 
         return new JmmSemanticsResult(parserResult, table, reports);
     }

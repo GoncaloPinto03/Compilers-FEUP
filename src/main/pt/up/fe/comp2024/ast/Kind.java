@@ -10,6 +10,10 @@ public enum Kind {
     PROGRAM,
     CLASS_DECL,
 
+    CONDITION_STM,
+
+    IDENTIFIER,
+
     FUNCTION_CALL,
 
     ARRAY_ACCESS,
