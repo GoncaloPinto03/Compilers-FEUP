@@ -121,14 +121,20 @@ public class JasminGenerator {
                 "";
 
         var methodName = method.getMethodName();
-//        ollirResult.getSymbolTable().
-        // TODO: Hardcoded param types and return type, needs to be expanded
-        // make function to handle return and parameters type
-        code.append("\n.method ").append(modifier).append(methodName).append("(I)I").append(NL);
-//        for (var param : method.getParams()) {
-////            var paramName = param.
-//        }
+        var retType = method.getReturnType();
+        System.out.println(methodName);
 
+        // TODO: Hardcoded param types and return type, needs to be expanded
+
+        code.append("\n.method ").append(modifier).append(methodName).append('(');
+        for (var param : method.getParams()) {
+          var paramType = decideElementTypeForParamOrField(param.getType().getTypeOfElement());
+          code.append(paramType);
+        }
+        code.append(')').append(retType);
+
+
+        // ollirResult.getSymbolTable().getMethods().get("type")
         // Add limits
         code.append(TAB).append(".limit stack 99").append(NL);
         code.append(TAB).append(".limit locals 99").append(NL);
@@ -261,8 +267,7 @@ public class JasminGenerator {
         code.append(retType).append(NL);
     }
 
-    // make similar function parameter = header or return
-    private String decideElementTypeForHeaderStmt(ElementType elementType) {
+    private String decideElementTypeForParamOrField(ElementType elementType) {
         String type;
         switch (elementType) {
             case INT32:
