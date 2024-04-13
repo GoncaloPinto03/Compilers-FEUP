@@ -172,8 +172,13 @@ public class JasminGenerator {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
-        // TODO: Hardcoded for int type, needs to be expanded
-        code.append("istore ").append(reg).append(NL);
+        String operandType = decideElementTypeForParamOrField(operand.getType().getTypeOfElement()).toLowerCase();
+        switch (operandType) {
+            case "i" -> code.append("istore ").append(reg).append(NL);
+            case "z" -> code.append("zstore ").append(reg).append(NL);
+            case "a" -> code.append("astore ").append(reg).append(NL);
+            case "" -> code.append("store ").append(reg).append(NL);
+        }
 
         return code.toString();
     }
