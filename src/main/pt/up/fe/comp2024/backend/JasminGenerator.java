@@ -74,18 +74,50 @@ public class JasminGenerator {
         code.append(".class ").append(className).append(NL).append(NL);
 
         // generate superClass name, if it exists
-        var superClass = ollirResult.getOllirClass().getSuperClass();
-        if (superClass == null)
-            code.append(".super java/lang/Object").append(NL);
-        else
-            code.append(".super ").append(superClass).append(NL);
+        String superClass = ollirResult.getOllirClass().getSuperClass() == null ?
+                "java/lang/Object" :
+                ollirResult.getOllirClass().getSuperClass();
+
+        code.append(".super ").append(superClass).append(NL);
+
+        // traverse fields of the class
+        for (var field : ollirResult.getOllirClass().getFields()) {
+            // need to check this one later
+            String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement()).equals("A") ? // 'A' stands for string
+                    "Ljava/lang/String;" :
+                    decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
+
+            String fieldAccess;
+            /*
+             nao sei se podemos fazer assim ou se só fazemos isto para o PUBLIC
+             String fieldAccess = field.getFieldAccessModifier().name().toLowerCase();
+            */
+            if (field.getFieldAccessModifier().name().equals("PUBLIC")) {
+                fieldAccess = "public";
+            } else {
+                fieldAccess = "";
+            }
+
+            if (field.isStaticField())
+                fieldAccess += " static";
+            if (field.isFinalField())
+                fieldAccess += " final";
+
+            code.append(".field ")
+                .append(fieldAccess)
+                .append(' ')
+                .append(field.getFieldName())
+                .append(fieldType)
+                .append(NL);
+        }
 
         // generate a single constructor method
         var defaultConstructor = """
                 ;default constructor
                 .method public <init>()V
                     aload_0
-                    invokespecial java/lang/Object/<init>()V
+                    invokespecial""" + superClass + """
+                    /<init>()V
                     return
                 .end method
                 """;
@@ -172,8 +204,8 @@ public class JasminGenerator {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
-        String operandType = decideElementTypeForParamOrField(operand.getType().getTypeOfElement()).toLowerCase();
-        switch (operandType) {
+        String operandType = decideElementTypeForParamOrField(operand.getType().getTypeOfElement());
+        switch (operandType.toLowerCase()) {
             case "i" -> code.append("istore ").append(reg).append(NL);
             case "z" -> code.append("zstore ").append(reg).append(NL);
             case "a" -> code.append("astore ").append(reg).append(NL);
@@ -289,7 +321,7 @@ public class JasminGenerator {
                 type = "A";
                 break;
             case VOID:
-                type = "";
+                type = "V";
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported return type: " + elementType);
