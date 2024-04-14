@@ -145,6 +145,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 var childCode = child.get("name");
                 code.append(childCode);
                 code.append(".i32");
+            } else if (typeValue.equals("VarRefExpr")) {
+                var childCode = child.get("name");
+                code.append(childCode);
+                code.append(".bool");
             }
         }
 
@@ -207,7 +211,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                     code.append(", ");
                 }
             } else if (MAIN_PARAM_DECLARATION.check(child)) {
-                code.append(visit(child));
                 if (i < numParams) {
                     code.append(", ");
                 }
@@ -224,14 +227,15 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(L_BRACKET);
 
         // rest of its children stmts
-        var afterParam = 2;
-        for (int i = numParams+1; i < node.getNumChildren(); i++) {
+        for (int i = 0; i < node.getNumChildren(); i++) {
             var child = node.getJmmChild(i);
             if (child.getKind().equals("VarDeclaration")) {
                 continue;
             }
-            var childCode = visit(child);
-            code.append(childCode);
+            if (child.getKind().equals("ReturnStmt")) {
+                var childCode = visit(child);
+                code.append(childCode);
+            }
         }
 
 
