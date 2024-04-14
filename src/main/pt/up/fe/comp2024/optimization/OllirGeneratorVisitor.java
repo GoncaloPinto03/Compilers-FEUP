@@ -125,7 +125,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             expr = exprVisitor.visit(node.getJmmChild(0));
         }
 
-        //code.append(expr.getComputation());
+        code.append(expr.getComputation());
         code.append("ret");
         if(methodName.equals("main")){
             code.append(" args.array.String");
@@ -232,8 +232,18 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             }
             if (child.getKind().equals("Statement")) {
                 var childCode = child.get("var");
-                code.append(childCode);
-                visit(child);
+                code.append(childCode).append(".").append(OptUtils.toOllirType(child.getJmmChild(0)));
+                code.append(SPACE);
+                code.append(":=");
+                code.append(SPACE);
+                code.append(".i32");
+                code.append(SPACE);
+                if (child.getJmmChild(0).getKind().equals("IntegerLiberal")) {
+                    code.append(child.getJmmChild(0).get("value")).append(".i32");
+                } else if (child.getJmmChild(0).getKind().equals("VarRefExpr")) {
+                    code.append(child.getJmmChild(0).get("name")).append(".i32");
+                }
+                code.append(END_STMT);
             }
             if (child.getKind().equals("ReturnStmt")) {
                 var childCode = visit(child);

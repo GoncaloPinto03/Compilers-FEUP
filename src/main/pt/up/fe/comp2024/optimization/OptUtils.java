@@ -32,8 +32,11 @@ public class OptUtils {
 
     public static String toOllirType(JmmNode typeNode) {
 
-        TYPE.checkOrThrow(typeNode);
-
+        if (typeNode.getKind().equals("IntegerLiberal")) {
+            return "i32";
+        } else if (typeNode.getKind().equals("VarRefExpr")) {
+            return "i32";
+        }
         String typeName = typeNode.get("value");
 
         return toOllirType(typeName);
@@ -50,6 +53,7 @@ public class OptUtils {
             case "int" -> "i32";
             case "boolean" -> "bool";
             case "void" -> "void";
+            case "IntegerLiberal" -> "i32";
             default -> "typeName";
         };
 
