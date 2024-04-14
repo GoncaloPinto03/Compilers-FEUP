@@ -29,6 +29,7 @@ public enum Kind {
     MAIN_PARAM_DECLARATION,
     IMPORT_DECL,
     VAR_DECLARATION,
+    FUNCTION_CALL,
     VAR_REF_EXPR, MAIN_DECL();
 
 

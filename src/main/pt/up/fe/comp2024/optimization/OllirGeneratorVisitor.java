@@ -44,7 +44,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(VAR_DECLARATION, this::visitVarDecl);
-
+        addVisit(FUNCTION_CALL, this::visitFunctionCall);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -242,6 +242,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                     code.append(child.getJmmChild(0).get("value")).append(".i32");
                 } else if (child.getJmmChild(0).getKind().equals("VarRefExpr")) {
                     code.append(child.getJmmChild(0).get("name")).append(".i32");
+                } else if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
+                    code.append(child.getJmmChild(0).get("name")).append(".i32");
                 }
                 code.append(END_STMT);
             }
@@ -303,6 +305,25 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(R_BRACKET);
 
         return code.toString();
+    }
+
+    private String visitFunctionCall(JmmNode node, Void unused) {
+
+        StringBuilder code = new StringBuilder();
+
+        var methodName = node.get("name");
+
+
+        return code.toString();
+    }
+
+    private boolean checkIfImport(String name) {
+        for (var importID : table.getImports()) {
+            if (importID.equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String buildConstructor() {
