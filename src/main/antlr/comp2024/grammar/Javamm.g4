@@ -34,28 +34,36 @@ COMMENT_MULTI : '/*' .*? '*/' -> skip ;     // multi line comment
 WS : [ \t\n\r\f]+ -> skip ;
 
 program
-    : (importDeclaration)* classDecl EOF
+    : (importDeclaration)* classDecl EOF #ProgramDeclaration
     ;
 
 importDeclaration
-    : 'import' importValue+=ID ('.' importValue+=ID )* ';'
+    : 'import' importValue+=ID ('.' importValue+=ID )* ';' #ImportDecl
     ;
 
 classDecl
-    : 'class' name=ID ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY
+    : 'class' name=ID ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY #ClassDeclaration
     ;
 
 varDeclaration
     : type ('main' | name=ID) ';'
     ;
 
+returnStatement
+    : 'return' expression ';' #ReturnStmt
+    ;
+
 methodDecl
-    : ('public')? type name=ID LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* 'return' expression ';' RCURLY
-    | ('public')? 'static'  type name='main' LPAREN 'String' LRECT RRECT aname=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY
+    : ('public')? (isStatic='static')? type name=ID LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* returnStatement RCURLY #MethodDeclaration
+    | ('public')? 'static'  type name='main' LPAREN mainParam aname=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY #MethodDeclaration
     ;
 
 param:
-    type name=ID
+    type name=ID #ParamDeclaration
+    ;
+
+mainParam:
+    'String' LRECT RRECT #MainParamDeclaration
     ;
 
 type locals [boolean isArray = false]
@@ -102,7 +110,6 @@ expression
     | value=INT #IntegerLiberal
     | value='true' #Identifier
     | value='false' #Identifier
-    | value=ID #Identifier
     | value=ID op=('++' | '--') #Increment
     | name = ID #VarRefExpr
     ;
