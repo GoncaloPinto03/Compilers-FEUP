@@ -730,7 +730,7 @@ public class JasminGenerator {
         return code.toString();
     }
 
-    private String generateAssign(AssignInstruction assign) {
+private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -748,8 +748,12 @@ public class JasminGenerator {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
-        // TODO: Hardcoded for int type, needs to be expanded
-        code.append("istore ").append(reg).append(NL);
+//        String operandType = decideElementTypeForParamOrField(operand.getType().getTypeOfElement());
+        switch (operand.getType().getTypeOfElement()) {
+            case INT32, BOOLEAN -> code.append("istore ").append(reg).append(NL);
+            case STRING, OBJECTREF -> code.append("astore ").append(reg).append(NL);
+            default -> throw new NotImplementedException("Unsupported assign type: " + operand.getType().getTypeOfElement());
+        }
 
         return code.toString();
     }
