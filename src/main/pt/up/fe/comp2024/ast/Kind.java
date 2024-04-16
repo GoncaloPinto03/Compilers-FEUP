@@ -9,6 +9,7 @@ import java.util.Set;
 public enum Kind {
     PROGRAM,
     CLASS_DECL,
+    VARARG,
 
     CONDITION_STM,
 

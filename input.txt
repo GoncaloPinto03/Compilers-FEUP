@@ -1,4 +1,4 @@
-class ArrayPlusInt {
+class ClassNotImported {
 
     public static void main(String[] args) {
 
@@ -6,10 +6,7 @@ class ArrayPlusInt {
 
     public int foo() {
         int a;
-        int b;
-
-        a = 1+1*2;
-        b = 10;
-        return a + b;
+        a = A.bar();
+        return a;
     }
 }
