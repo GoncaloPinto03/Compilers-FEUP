@@ -247,6 +247,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                         code.append(child.getJmmChild(0).get("name")).append(".i32");
                     }
                 }
+
+                if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
+                    var childCode = visitFunctionCall(child.getJmmChild(0), null);
+                    code.append(childCode);
+                }
+
                 code.append(END_STMT);
             }
             if (child.getKind().equals("ReturnStmt")) {
@@ -317,7 +323,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         // Build the OLLIR instruction for the function call
         code.append("invokestatic(");
-        code.append(""); // No target object for static method call
+        String importFunc = node.getJmmChild(0).get("name");
+        code.append(importFunc); // No target object for static method call
         code.append(", \"");
         code.append(functionName); // Method name (e.g., "println")
         code.append("\", ");
@@ -326,8 +333,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         String argument = exprVisitor.visit(node.getJmmChild(1)).getCode();
         code.append(argument); // Argument passed to the method
 
-        code.append(".i32").append(").V");
-        code.append(END_STMT);
+        code.append(").V");
 
         return code.toString();
     }
