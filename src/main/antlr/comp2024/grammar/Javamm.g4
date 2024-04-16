@@ -89,6 +89,7 @@ statement
     | expression ';'
     | var=ID '=' expression ';'
     | var=ID LRECT expression RRECT '=' expression ';'
+    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN ';'  // Method invocation as a statement
     ;
 
 expression
@@ -96,7 +97,7 @@ expression
     | 'new' 'int' LRECT expression RRECT #ArrayDeclaration
     | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN  #NewClass
     | expression LRECT expression RRECT #arrayAccess
-    | expression '.' value=ID LPAREN (expression (',' expression) *)? RPAREN #FunctionCall
+    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN #FunctionCall
     | expression '.' 'length' #Length
     | value = 'this' #Object
     | value = '!' expression #Negation
