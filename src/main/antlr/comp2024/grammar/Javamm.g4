@@ -34,28 +34,36 @@ COMMENT_MULTI : '/*' .*? '*/' -> skip ;     // multi line comment
 WS : [ \t\n\r\f]+ -> skip ;
 
 program
-    : (importDeclaration)* classDecl EOF
+    : (importDeclaration)* classDecl EOF #ProgramDeclaration
     ;
 
 importDeclaration
-    : 'import' importValue+=ID ('.' importValue+=ID )* ';'
+    : 'import' importValue+=ID ('.' importValue+=ID )* ';' #ImportDecl
     ;
 
 classDecl
-    : 'class' name=ID ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY
+    : 'class' name=ID ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY #ClassDeclaration
     ;
 
 varDeclaration
     : type ('main' | name=ID) ';'
     ;
 
+returnStatement
+    : 'return' expression ';' #ReturnStmt
+    ;
+
 methodDecl
-    : ('public')? type name=ID LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* 'return' expression ';' RCURLY
-    | ('public')? 'static'  type name='main' LPAREN 'String' LRECT RRECT aname=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY
+    : ('public')? (isStatic='static')? type name=ID LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* returnStatement RCURLY #MethodDeclaration
+    | ('public')? 'static'  type name='main' LPAREN mainParam aname=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY #MethodDeclaration
     ;
 
 param:
-    type name=ID
+    type name=ID #ParamDeclaration
+    ;
+
+mainParam:
+    'String' LRECT RRECT #MainParamDeclaration
     ;
 
 type locals [boolean isArray = false]
@@ -74,35 +82,35 @@ type locals [boolean isArray = false]
     ;
 
 statement
-    : LCURLY ( statement )* RCURLY #BRACKETS
-    | 'if' LPAREN expression RPAREN statement 'else' statement #ConditionStm
-    | 'while' LPAREN expression RPAREN statement #ConditionStm
-    | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
-    | expression ';' #EXPR_STM
-    | var=ID '=' expression ';' #ASSIGNMENT_STM
-    | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
+    : LCURLY ( statement )* RCURLY
+    | 'if' LPAREN expression RPAREN statement 'else' statement
+    | 'while' LPAREN expression RPAREN statement
+    | 'for' '(' statement expression ';' expression ')' statement
+    | expression ';'
+    | var=ID '=' expression ';'
+    | var=ID LRECT expression RRECT '=' expression ';'
+    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN ';'  // Method invocation as a statement
     ;
-
-
 
 expression
     : LPAREN expression RPAREN  #Parentesis
     | 'new' 'int' LRECT expression RRECT #ArrayDeclaration
     | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN  #NewClass
     | expression LRECT expression RRECT #arrayAccess
-    | expression '.' value=ID LPAREN (expression (',' expression) *)? RPAREN #FunctionCall
+    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN #FunctionCall
     | expression '.' 'length' #Length
     | value = 'this' #Object
     | value = '!' expression #Negation
-    | expression op=('*' | '/') expression #BinaryExpr
-    | expression op=('+' | '-') expression #BinaryExpr
-    | expression op=('<' | '>') expression #BinaryExpr
-    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #BinaryExpr
-    | expression op=('&&' | '||') expression #BinaryExpr
-    | LRECT ( expression ( ',' expression )* )? RRECT #ArrayLiteral
+    | expression op=('*' | '/') expression #binaryExpr
+    | expression op=('+' | '-') expression #binaryExpr
+    | expression op=('<' | '>') expression #binaryExpr
+    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #binaryExpr
+    | expression op=('&&' | '||') expression #binaryExpr
+    | className=ID expression # Constructor
+    | LRECT ( expression ( ',' expression )* )? RRECT # ArrayLiteral
     | value=INT #IntegerLiberal
-    | name = ID #VarRefExpr
-    | value='false' #Identifier
     | value='true' #Identifier
+    | value='false' #Identifier
     | value=ID op=('++' | '--') #Increment
+    | name = ID #VarRefExpr
     ;
