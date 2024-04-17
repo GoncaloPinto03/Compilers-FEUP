@@ -498,7 +498,6 @@
 
 
 
-// O QUE ESTÁ EM BAIXO É DO RICARDO
 
 package pt.up.fe.comp2024.backend;
 
@@ -512,6 +511,7 @@ import pt.up.fe.specs.util.utilities.StringLines;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -552,7 +552,6 @@ public class JasminGenerator {
         generators.put(Operand.class, this::generateOperand);
         generators.put(BinaryOpInstruction.class, this::generateBinaryOp);
         generators.put(ReturnInstruction.class, this::generateReturn);
-
         generators.put(CallInstruction.class, this::generateCall);
         generators.put(PutFieldInstruction.class, this::generatePutField);
         generators.put(GetFieldInstruction.class, this::generateGetField);
@@ -581,45 +580,26 @@ public class JasminGenerator {
         var className = ollirResult.getOllirClass().getClassName();
         code.append(".class ").append(className).append(NL).append(NL);
 
-        // TODO: Hardcoded to Object, needs to be expanded
-        String superclass = classUnit.getSuperClass() != null ? classUnit.getSuperClass().toString(): "java/lang/Object";
-        String superCode = ".super " + superclass;
+        String superclass = classUnit.getSuperClass() != null ? classUnit.getSuperClass() : "java/lang/Object";
 
-        code.append(superCode).append(NL);
-
-        String s;
+        code.append(".super ").append(superclass).append(NL);
 
         for (var field : ollirResult.getOllirClass().getFields()) {
-            if (field.getFieldType().getTypeOfElement() == ElementType.INT32) {
-                s = "I";
-            } else if (field.getFieldType().getTypeOfElement() == ElementType.BOOLEAN) {
-                s = "Z";
-            } else if (field.getFieldType().getTypeOfElement() == ElementType.VOID) {
-                s = "V";
-            } else if (field.getFieldType().getTypeOfElement() == ElementType.STRING) {
-                s = "Ljava/lang/String;";
-            } else {
-                s = "";
-            }
+            String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
 
-            String access;
+            if (fieldType.equals("A"))
+                fieldType = "Ljava/lang/String;";
 
-            if (field.getFieldAccessModifier().name().equals("PUBLIC")) {
-                access = "public";
-            }
-            else {
-                access = "";
-            }
+            String fieldAccess = "";
+            if (field.getFieldAccessModifier().name().equals("PUBLIC"))
+                fieldAccess = "public";
 
-            String restriction;
-            if (field.isFinalField()) { restriction = " final"; }
-            else if (field.isStaticField()) { restriction = " static"; } else { restriction = ""; }
+            if (field.isFinalField())
+                fieldAccess += " final";
+            if (field.isStaticField())
+                fieldAccess += " static";
 
-            String field_code = ".field " + access + restriction + " " + field.getFieldName() + " " + s + NL;
-
-            code.append(field_code);
-
-
+            code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldType).append(NL);
         }
 
         // generate a single constructor method
@@ -663,53 +643,38 @@ public class JasminGenerator {
                 method.getMethodAccessModifier().name().toLowerCase() + " " :
                 "";
 
-        String restriction;
-        if (method.isFinalMethod()) { restriction = "final "; }
-        else if (method.isStaticMethod()) { restriction = "static "; } else { restriction = ""; }
+        String methodAccess = "";
+        if (method.isFinalMethod())
+            methodAccess = "final ";
+        if (method.isStaticMethod())
+            methodAccess = "static ";
 
         var methodName = method.getMethodName();
 
-        // TODO: Hardcoded param types and return type, needs to be expanded
-        code.append("\n.method ").append(modifier).append(restriction).append(methodName).append("(");
+        code.append("\n.method ").append(modifier).append(methodAccess).append(methodName).append("(");
 
+        // traverse method parameters
         for (Element argument : method.getParams()) {
-            ElementType elementType = argument.getType().getTypeOfElement();
-            if (elementType == ElementType.INT32) {
-                code.append("I");
-            } else if (elementType == ElementType.BOOLEAN) {
-                code.append("Z");
-            } else if (elementType == ElementType.VOID) {
-                code.append("V");
-            } else if (elementType == ElementType.STRING) {
-                code.append("Ljava/lang/String;");
-            } else if (elementType == ElementType.ARRAYREF) {
-                code.append("[Ljava/lang/String;");
-            }
-        }
+            String elementType = decideElementTypeForParamOrField(argument.getType().getTypeOfElement());
 
+            if (argument.getType().getTypeOfElement().toString().equals("STRING"))
+                elementType = "Ljava/lang/String;";
+            if (argument.getType().getTypeOfElement().toString().equals("ARRAYREF"))
+                elementType = "[Ljava/lang/String;";
+
+            code.append(elementType);
+        }
 
         code.append(")");
-        var returnType = method.getReturnType().getTypeOfElement();
 
-        if(returnType == ElementType.INT32){
-            code.append("I\n");
-        }
-        if (returnType == ElementType.BOOLEAN){
-            code.append("Z\n");
-        }
-        if (returnType == ElementType.VOID){
-            code.append("V\n");
-        }
-        if (returnType == ElementType.STRING){
-            code.append("Ljava/lang/String;\n");
-        }
-        if (returnType == ElementType.ARRAYREF){
-            code.append("Ljava/lang/String;\n");
-        }
-        else{
-            code.append("\n");
-        }
+        var returnType = decideElementTypeForParamOrField(method.getReturnType().getTypeOfElement());
 
+        if (method.getReturnType().getTypeOfElement().toString().equals("STRING"))
+            returnType = "Ljava/lang/String;";
+        if (method.getReturnType().getTypeOfElement().toString().equals("ARRAYREF"))
+            returnType = "[Ljava/lang/String;";
+
+        code.append(returnType).append(NL);
 
         // Add limits
         code.append(TAB).append(".limit stack 99").append(NL);
@@ -748,7 +713,6 @@ private String generateAssign(AssignInstruction assign) {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
-//        String operandType = decideElementTypeForParamOrField(operand.getType().getTypeOfElement());
         switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> code.append("istore ").append(reg).append(NL);
             case STRING, OBJECTREF -> code.append("astore ").append(reg).append(NL);
@@ -769,7 +733,7 @@ private String generateAssign(AssignInstruction assign) {
     private String generateOperand(Operand operand) {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
-        // fazer um switch aqui
+
         String loadType = "";
         switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> loadType = "iload " + reg + NL;
@@ -789,7 +753,25 @@ private String generateAssign(AssignInstruction assign) {
         // apply operation
         var op = switch (binaryOp.getOperation().getOpType()) {
             case ADD -> "iadd";
+            case SUB -> "isub";
             case MUL -> "imul";
+            case DIV -> "idiv";
+            case SHR -> "ishr";
+            case SHL -> "ishl";
+            case SHRR -> "iushr";
+            case XOR -> "ixor";
+            case AND -> "iand";
+            case OR -> "ior";
+            case LTH -> "if_icmplt";
+            case GTH -> "if_icmpgt";
+            case EQ -> "if_icmpeq";
+            case NEQ -> "if_icmpne";
+            case LTE -> "if_icmple";
+            case GTE -> "if_icmpge";
+            case ANDB -> "iand";
+            case ORB -> "ior";
+            case NOTB -> "iconst_m1 \n ixor";
+            case NOT -> "iconst_1 \n ixor";
             default -> throw new NotImplementedException(binaryOp.getOperation().getOpType());
         };
 
@@ -801,11 +783,8 @@ private String generateAssign(AssignInstruction assign) {
     private String generateReturn(ReturnInstruction returnInst) {
         var code = new StringBuilder();
 
-        // TODO: Hardcoded to int return type, needs to be expanded
-
-        if (returnInst.getElementType() == ElementType.VOID) {
+        if (returnInst.getElementType() == ElementType.VOID)
             code.append("\nreturn").append(NL);
-        }
         else {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("\nireturn").append(NL);
@@ -833,31 +812,21 @@ private String generateAssign(AssignInstruction assign) {
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
 
-
-        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName()).append("/<init>");
-
+        var className = ollirResult.getOllirClass().getClassName();
+        code.append("invokespecial ").append(className).append("/<init>");
 
         code.append("(");
 
-        for (Element el : callInstruction.getArguments()) {
-            switch (el.getType().getTypeOfElement()) {
-                case INT32 -> code.append("I");
-                case BOOLEAN -> code.append("B");
-                case VOID -> code.append("V");
-                case STRING -> code.append("Ljava/lang/String;");
-            }
+        for (Element element : callInstruction.getArguments()) {
+            var elementType = element.getType().getTypeOfElement();
+            decideReturnTypeForInvoke(code, elementType);
         }
 
         code.append(")");
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
 
-        switch (returnType) {
-            case INT32 -> code.append("I");
-            case BOOLEAN -> code.append("B");
-            case VOID -> code.append("V");
-            case STRING -> code.append("Ljava/lang/String;");
-        }
+        decideReturnTypeForInvoke(code, returnType);
 
         return code.append("\n").toString();
     }
@@ -962,7 +931,7 @@ private String generateAssign(AssignInstruction assign) {
     private String generateGetField(GetFieldInstruction getFieldInstruction) {
         var code = new StringBuilder();
 
-        var first_op = getFieldInstruction.getOperands().get(0);
+        var first_op = getFieldInstruction.getOperands().getFirst();
         var callerType = (ClassType) first_op.getType();
         var field = (Operand) getFieldInstruction.getOperands().get(1);
 
@@ -979,4 +948,25 @@ private String generateAssign(AssignInstruction assign) {
 
         return code.append("\n").toString();
     }
+
+    private void decideReturnTypeForInvoke(StringBuilder code, ElementType returnType) {
+        switch (returnType) {
+            case INT32 -> code.append("I");
+            case BOOLEAN -> code.append("B");
+            case VOID -> code.append("V");
+            case STRING -> code.append("Ljava/lang/String;");
+        }
+    }
+
+    private String decideElementTypeForParamOrField(ElementType elementType) {
+        return switch (elementType) {
+            case INT32 -> "I";
+            case BOOLEAN -> "Z";
+            case ARRAYREF, OBJECTREF, CLASS, STRING, THIS -> "A";
+            case VOID -> "V";
+            default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
+        };
+    }
 }
+
+
