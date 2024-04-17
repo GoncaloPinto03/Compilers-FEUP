@@ -1,12 +1,14 @@
-class ClassNotImported {
+import io;
 
-    public static void main(String[] args) {
-
-    }
+class CompileMethodInvocation {
 
     public int foo() {
         int a;
-        a = A.bar();
-        return a;
+
+        a = 1;
+
+        io.println(a);
+
+        return 0;
     }
 }

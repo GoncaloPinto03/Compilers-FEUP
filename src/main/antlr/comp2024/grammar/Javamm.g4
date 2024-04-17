@@ -87,7 +87,7 @@ statement
     | 'if' LPAREN expression RPAREN statement 'else' statement #ConditionStm
     | 'while' LPAREN expression RPAREN statement #ConditionStm
     | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
-    | expression ';' #FOR_STM
+    | expression ';' #assignStmt
     | var=ID '=' expression ';' #assignStmt
     | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
     | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN ';'  #MethodInvocationStm
@@ -109,7 +109,7 @@ expression
     | expression op=('&&' | '||') expression #BinaryExpr
     | className=ID expression # Constructor
     | LRECT ( expression ( ',' expression )* )? RRECT # ArrayLiteral
-    | value=INT #IntegerLiberal
+    | value=INT #IntegerLiteral
     | value='true' #Identifier
     | value='false' #Identifier
     | value=ID op=('++' | '--') #Increment

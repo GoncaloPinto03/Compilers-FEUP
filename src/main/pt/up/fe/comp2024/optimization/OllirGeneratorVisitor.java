@@ -136,7 +136,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         // append node childs
         for (var child : node.getChildren()) {
             String typeValue = node.getChildren().get(0).getKind();
-            if (typeValue.equals("IntegerLiberal")) {
+            if (typeValue.equals("IntegerLiteral")) {
                 var childCode = child.get("value");
                 code.append(childCode);
                 code.append(".i32");
@@ -230,7 +230,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             if (child.getKind().equals("VarDeclaration")) {
                 continue;
             }
-            if (child.getKind().equals("Statement")) {
+            if (child.getKind().equals("AssignStmt")) {
                 if(child.hasAttribute("var")) {
                     var childCode = child.get("var");
                     code.append(childCode).append(".").append(OptUtils.toOllirType(child.getJmmChild(0)));
@@ -239,7 +239,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                     code.append(SPACE);
                     code.append(".i32");
                     code.append(SPACE);
-                    if (child.getJmmChild(0).getKind().equals("IntegerLiberal")) {
+                    if (child.getJmmChild(0).getKind().equals("IntegerLiteral")) {
                         code.append(child.getJmmChild(0).get("value")).append(".i32");
                     } else if (child.getJmmChild(0).getKind().equals("VarRefExpr")) {
                         code.append(child.getJmmChild(0).get("name")).append(".i32");
