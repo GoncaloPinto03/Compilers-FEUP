@@ -34,8 +34,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     }
 
-
-
     private Type getNodeType (JmmNode node, SymbolTable table){
         if(node.getKind().equals("VarRefExpr")){
             String var = node.get("name");
