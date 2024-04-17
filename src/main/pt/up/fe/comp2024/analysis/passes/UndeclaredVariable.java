@@ -31,6 +31,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit (Kind.BINARY_EXPR, this::visitBinaryExpr );
         addVisit(Kind.CONDITION_STM, this::visitConditionStm);
         addVisit(Kind.IDENTIFIER, this::visitBooleanExpr);
+        addVisit(Kind.NEGATION, this::visitNegation);
+        //addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
+        //addVisit(Kind.THIS, this::visitThis);
+        //addVisit(Kind.ASSIGN_STMT, this::visitAssign);
+        addVisit(Kind.LENGTH, this::visitLength);
 
     }
 
@@ -76,6 +81,23 @@ public class UndeclaredVariable extends AnalysisVisitor {
         }
         return new Type(node.getKind(), false);
     }
+
+    private Void visitLength(JmmNode node, SymbolTable table){
+        JmmNode array = node.getChild(0);
+        Type arrayType = TypeUtils.getExprType(array, table);
+        if(!arrayType.isArray()){
+            String message = "Invalid length operation";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+        return null;
+    }
+
+
 
 
 
@@ -128,13 +150,32 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
+    private Void visitNegation (JmmNode node, SymbolTable table){
+        JmmNode exp = node.getChildren().get(0);
+        Type type = TypeUtils.getExprType(exp, table);
+
+        if(!type.getName().equals("boolean") || type.isArray()){
+            String message = "Negation can only be applied to a boolean expression";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+
+        return null;
+    }
+
+
+
     private Void visitBooleanExpr (JmmNode node, SymbolTable table){
         JmmNode leftExpr = node.getChild(0);
         JmmNode rightExpr = node.getChild(1);
 
 
-        Type leftType = getNodeType(leftExpr,table);
-        Type rightType = getNodeType(rightExpr,table);
+        Type leftType = TypeUtils.getExprType(leftExpr,table);
+        Type rightType = TypeUtils.getExprType(rightExpr,table);
 
         if(!leftType.getName().equals("boolean") || !rightType.getName().equals("boolean")){
             String message = "Invalid";
@@ -151,16 +192,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
-        JmmNode arrayExpression = array.getChild(0); // Get the expression representing the array
-        JmmNode indexExpression = array.getChild(1); // Get the expression representing the index
+        //Type arrayType = TypeUtils.getExprType(array, table);
+        //Type indexType = TypeUtils.getExprType(array.getChild(1), table);
+        JmmNode accessNode = array.getChildren().get(0);
+        JmmNode indexNode = array.getChildren().get(1);
 
-        // Get the types of the array and index expressions
-        Type arrayType = getNodeType(arrayExpression, table);
-        Type indexType = getNodeType(indexExpression, table);
+        Type accessNodeType = getNodeType(accessNode, table);
+        Type indexNodeType = getNodeType(indexNode, table);
 
-        // Check if the array expression represents an array type
-        if (!arrayType.isArray()) {
-            var message = String.format("Invalid array access - '%s'. Must be an array type.", arrayType.getName());
+
+        if(!accessNodeType.isArray()){
+            String message = "Invalid array access";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(array),
@@ -169,24 +211,28 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
 
-        // Check if the index expression represents an integer type
-        if (!indexType.getName().equals("int") && (!indexType.getName().equals("IntegerLiteral"))) {
-            var message = String.format("Invalid array index '%s'. Must be of type int.", indexType.getName());
+        if(!indexNodeType.getName().equals("IntegerLiteral")){
+            String message = "Invalid array access index, should be an integer.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
-                    NodeUtils.getLine(indexExpression),
-                    NodeUtils.getColumn(indexExpression),
+                    NodeUtils.getLine(array),
+                    NodeUtils.getColumn(array),
                     message, null)
             );
         }
-
         return null;
     }
 
 
+
+
+
+
+
+
     private Void visitConditionStm (JmmNode node, SymbolTable table){
         JmmNode condition = node.getChild(0);
-        Type conditionType = getNodeType(condition, table);
+        Type conditionType = TypeUtils.getExprType(condition, table);
         if(!conditionType.getName().equals("boolean")){
             String message = "Invalid";
             addReport(Report.newError(
@@ -215,17 +261,39 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }*/
 
+    /*private Void visitReturnStmt(JmmNode node, SymbolTable table) {
+        JmmNode stmt = node.getChildren().get(0);
+        Type retType = TypeUtils.getExprType(stmt, table);
+        Type methodType = table.getReturnType(currentMethod);
+
+        if(retType.getName().equals("imported")){
+            return null;
+        }
+        if(!methodType.getName().equals(retType.getName()) || methodType.isArray() != retType.isArray()){
+            String message = "Invalid return type";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+
+
+        return null;
+    }*/
+
 
     private Void visitBinaryExpr(JmmNode node, SymbolTable table) {
         JmmNode leftExpr = node.getChild(0);
         JmmNode rightExpr = node.getChild(1);
 
 
-        Type leftType = getNodeType(leftExpr,table);
-        Type rightType = getNodeType(rightExpr,table);
+        Type leftType = TypeUtils.getExprType(leftExpr,table);
+        Type rightType = TypeUtils.getExprType(rightExpr,table);
 
         // Check if the types are compatible for the binary operation
-        if (!(leftType.getName().equals("IntegerLiberal") || leftType.getName().equals("int")) || leftType.isArray()) {
+        if (!(leftType.getName().equals("IntegerLiteral") || leftType.getName().equals("int")) || leftType.isArray()) {
             String message =("The type of left operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -235,7 +303,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
 
-        if (!(rightType.getName().equals("IntegerLiberal") || rightType.getName().equals("int")) || rightType.isArray()) {
+        if (!(rightType.getName().equals("IntegerLiteral") || rightType.getName().equals("int")) || rightType.isArray()) {
             String message =("The type of right operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,

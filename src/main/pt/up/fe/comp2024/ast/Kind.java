@@ -11,7 +11,15 @@ public enum Kind {
     CLASS_DECL,
     VARARG,
 
+    NEGATION,
+
+    METHODCALL,
+
     CONDITION_STM,
+
+    PARENTESIS,
+
+    NEW_OBJECT,
 
     IDENTIFIER,
 
@@ -20,6 +28,12 @@ public enum Kind {
     ARRAY_ACCESS,
 
     ARRAY_LITERAL,
+
+    LENGTH,
+
+    THIS,
+
+    ARRAY_DECLARATION,
 
     VAR_DECL,
     TYPE,

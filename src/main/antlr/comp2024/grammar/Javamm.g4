@@ -67,19 +67,18 @@ mainParam:
     ;
 
 type locals [boolean isArray = false]
-    : value='int' ('['{$isArray = true;}']')? #VARIABLE_INT   // variable number of integers
-    | value='int' ('...')? #VARARG //??
-    | value='boolean'      #BOOL                        // Boolean
-    | value='double'       #DOUBLE                     // Double
-    | value='float'        #FLOAT             // Float
-    | value='String'      #STRING                      // string
-    | value='char'        #CHAR               // char
-    | value='byte'        #BYTE                 // byte
-    | value='short'       #SHORT                 // short
-    | value='long'        #LONG                      // Long
-    | value='void'        #VOID                 // Void
-    | value=ID            #ID                      // Id
-    | value = 'int' #INT
+    : value='int' ('['{$isArray = true;}']')?  // variable number of integers
+    | value='int' ('...')?
+    | value='boolean'                             // Boolean
+    | value='double'                          // Double
+    | value='float'                   // Float
+    | value='String'                           // string
+    | value='char'                       // char
+    | value='byte'                         // byte
+    | value='short'                        // short
+    | value='long'                              // Long
+    | value='void'                         // Void
+    | value=ID
     ;
 
 statement
@@ -87,11 +86,13 @@ statement
     | 'if' LPAREN expression RPAREN statement 'else' statement #ConditionStm
     | 'while' LPAREN expression RPAREN statement #ConditionStm
     | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
-    | expression ';' #assignStmt
-    | var=ID '=' expression ';' #assignStmt
+    | expression ';' #ExprStmt
+    |expression '=' expression ';' #assignStmt
     | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
     | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN ';'  #MethodInvocationStm
     ;
+
+
 
 expression
     : LPAREN expression RPAREN  #Parentesis
@@ -100,7 +101,7 @@ expression
     | expression LRECT expression RRECT #arrayAccess
     | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN #FunctionCall
     | expression '.' 'length' #Length
-    | value = 'this' #Object
+    | 'this' #This
     | value = '!' expression #Negation
     | expression op=('*' | '/') expression #BinaryExpr
     | expression op=('+' | '-') expression #BinaryExpr
@@ -110,8 +111,10 @@ expression
     | className=ID expression # Constructor
     | LRECT ( expression ( ',' expression )* )? RRECT # ArrayLiteral
     | value=INT #IntegerLiteral
+    | 'new' object = ID '(' ')' #NewObject
     | value='true' #Identifier
     | value='false' #Identifier
     | value=ID op=('++' | '--') #Increment
     | name = ID #VarRefExpr
+    | expression '.' ID '(' (expression (',' expression)*)? ')' #MethodCall
     ;
