@@ -3,6 +3,9 @@ import io;
 class CompileMethodInvocation {
 
     public int foo() {
+        int a;
+
+        a = 1;
 
         io.println(a);
 

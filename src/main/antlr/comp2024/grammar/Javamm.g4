@@ -67,29 +67,30 @@ mainParam:
     ;
 
 type locals [boolean isArray = false]
-    : value='int' ('['{$isArray = true;}']')?   // variable number of integers
-    | value='int' ('...')?
-    | value='boolean'                           // Boolean
-    | value='double'                            // Double
-    | value='float'                             // Float
-    | value='String'                            // string
-    | value='char'                              // char
-    | value='byte'                              // byte
-    | value='short'                             // short
-    | value='long'                              // Long
-    | value='void'                              // Void
-    | value=ID                                  // Id
+    : value='int' ('['{$isArray = true;}']')? #VARIABLE_INT   // variable number of integers
+    | value='int' ('...')? #VARARG //??
+    | value='boolean'      #BOOL                        // Boolean
+    | value='double'       #DOUBLE                     // Double
+    | value='float'        #FLOAT             // Float
+    | value='String'      #STRING                      // string
+    | value='char'        #CHAR               // char
+    | value='byte'        #BYTE                 // byte
+    | value='short'       #SHORT                 // short
+    | value='long'        #LONG                      // Long
+    | value='void'        #VOID                 // Void
+    | value=ID            #ID                      // Id
+    | value = 'int' #INT
     ;
 
 statement
-    : LCURLY ( statement )* RCURLY
-    | 'if' LPAREN expression RPAREN statement 'else' statement
-    | 'while' LPAREN expression RPAREN statement
-    | 'for' '(' statement expression ';' expression ')' statement
-    | expression ';'
-    | var=ID '=' expression ';'
-    | var=ID LRECT expression RRECT '=' expression ';'
-    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN ';'  // Method invocation as a statement
+    : LCURLY ( statement )* RCURLY  #BRACKETS
+    | 'if' LPAREN expression RPAREN statement 'else' statement #ConditionStm
+    | 'while' LPAREN expression RPAREN statement #ConditionStm
+    | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
+    | expression ';' #assignStmt
+    | var=ID '=' expression ';' #assignStmt
+    | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
+    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN ';'  #MethodInvocationStm
     ;
 
 expression
@@ -101,14 +102,14 @@ expression
     | expression '.' 'length' #Length
     | value = 'this' #Object
     | value = '!' expression #Negation
-    | expression op=('*' | '/') expression #binaryExpr
-    | expression op=('+' | '-') expression #binaryExpr
-    | expression op=('<' | '>') expression #binaryExpr
-    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #binaryExpr
-    | expression op=('&&' | '||') expression #binaryExpr
+    | expression op=('*' | '/') expression #BinaryExpr
+    | expression op=('+' | '-') expression #BinaryExpr
+    | expression op=('<' | '>') expression #BinaryExpr
+    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #BinaryExpr
+    | expression op=('&&' | '||') expression #BinaryExpr
     | className=ID expression # Constructor
     | LRECT ( expression ( ',' expression )* )? RRECT # ArrayLiteral
-    | value=INT #IntegerLiberal
+    | value=INT #IntegerLiteral
     | value='true' #Identifier
     | value='false' #Identifier
     | value=ID op=('++' | '--') #Increment
