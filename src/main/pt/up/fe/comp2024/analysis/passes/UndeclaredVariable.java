@@ -28,7 +28,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
         addVisit (Kind.BINARY_EXPR, this::visitBinaryExpr );
-        //addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral );
+        //addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral);
         addVisit("Negation", this::visitNegationExpr);
     }
 

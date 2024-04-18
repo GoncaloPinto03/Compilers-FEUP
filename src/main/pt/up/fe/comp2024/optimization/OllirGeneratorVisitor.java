@@ -45,6 +45,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(VAR_DECLARATION, this::visitVarDecl);
         addVisit(FUNCTION_CALL, this::visitFunctionCall);
+
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -82,7 +83,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitAssignStmt(JmmNode node, Void unused) {
 
         var lhs = exprVisitor.visit(node.getJmmChild(0));
-        var rhs = exprVisitor.visit(node.getJmmChild(1));
+        var rhs = OllirExprResult.EMPTY;
+        if (node.getNumChildren()>1) {
+            rhs = exprVisitor.visit(node.getJmmChild(1));
+        }
 
         StringBuilder code = new StringBuilder();
 
@@ -151,7 +155,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             } else if (typeValue.equals("VarRefExpr")) {
                 var childCode = child.get("name");
                 code.append(childCode);
-                code.append(".bool");
+                if (retType.getName().equals("int")) {
+                    code.append(".i32");
+                } else if (retType.getName().equals("boolean")) {
+                    code.append(".bool");
+                }
             }
         }
 
@@ -231,7 +239,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 continue;
             }
             if (child.getKind().equals("AssignStmt")) {
-                if(child.hasAttribute("var")) {
+                if (child.getJmmChild(0).getKind().equals("BinaryExpr")) {
+                    var childCode = visit(child);
+                    code.append(childCode);
+                } else if(child.hasAttribute("var")) {
                     var childCode = child.get("var");
                     code.append(childCode).append(".").append(OptUtils.toOllirType(child.getJmmChild(0)));
                     code.append(SPACE);
@@ -246,9 +257,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                     } else if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
                         code.append(child.getJmmChild(0).get("name")).append(".i32");
                     }
-                }
-
-                if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
+                }else if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
                     var childCode = visitFunctionCall(child.getJmmChild(0), null);
                     code.append(childCode);
                 }
@@ -327,11 +336,13 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(importFunc); // No target object for static method call
         code.append(", \"");
         code.append(functionName); // Method name (e.g., "println")
-        code.append("\", ");
+        code.append("\"");
 
         // Extract and append the argument of the function call
-        String argument = exprVisitor.visit(node.getJmmChild(1)).getCode();
-        code.append(argument); // Argument passed to the method
+        for (int i = 1; i < node.getNumChildren(); i++) {
+            code.append(", ");
+            code.append(exprVisitor.visit(node.getJmmChild(i)).getCode());
+        }
 
         code.append(").V");
 
