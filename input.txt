@@ -1,13 +1,12 @@
-class ArrayAccessOnInt {
-
-    public static void main(String[] args) {
-
-    }
+class Varargs {
 
     public int foo() {
         int a;
-        a = 0;
+        a = this.varargs(10, 20, 30);
+        return a;
+    }
 
-        return a[10];
+    public int varargs(int... a) {
+        return a[0];
     }
 }

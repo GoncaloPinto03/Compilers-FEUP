@@ -327,11 +327,13 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(importFunc); // No target object for static method call
         code.append(", \"");
         code.append(functionName); // Method name (e.g., "println")
-        code.append("\", ");
+        code.append("\"");
 
         // Extract and append the argument of the function call
-        String argument = exprVisitor.visit(node.getJmmChild(1)).getCode();
-        code.append(argument); // Argument passed to the method
+        for (int i = 1; i < node.getNumChildren(); i++) {
+            code.append(", ");
+            code.append(exprVisitor.visit(node.getJmmChild(i)).getCode());
+        }
 
         code.append(").V");
 

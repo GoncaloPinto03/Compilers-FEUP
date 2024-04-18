@@ -13,6 +13,7 @@ import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Checks if the type of the expression in a return statement is compatible with the method return type.
@@ -28,53 +29,55 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
-        addVisit (Kind.BINARY_EXPR, this::visitBinaryExpr );
+        addVisit(Kind.BINARY_EXPR, this::visitBinaryExpr);
         addVisit(Kind.CONDITION_STM, this::visitConditionStm);
-        addVisit(Kind.IDENTIFIER, this::visitBooleanExpr);
         addVisit(Kind.NEGATION, this::visitNegation);
-        //addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
+        addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
         //addVisit(Kind.THIS, this::visitThis);
+        //addVisit(Kind.CONSTRUCTOR, this::visitArrayAccess);
         //addVisit(Kind.ASSIGN_STMT, this::visitAssign);
         addVisit(Kind.LENGTH, this::visitLength);
+        //addVisit(Kind.FUNCTION_CALL, this::visitMethodCall);
+
 
     }
 
-    private Type getNodeType (JmmNode node, SymbolTable table){
-        if(node.getKind().equals("VarRefExpr")){
+    private Type getNodeType(JmmNode node, SymbolTable table) {
+        if (node.getKind().equals("VarRefExpr")) {
             String var = node.get("name");
-            List<Symbol> params=table.getParameters(this.currentMethod);
-            List<Symbol> locals=table.getLocalVariables(this.currentMethod);
-            List<Symbol> fields=table.getFields();
+            List<Symbol> params = table.getParameters(this.currentMethod);
+            List<Symbol> locals = table.getLocalVariables(this.currentMethod);
+            List<Symbol> fields = table.getFields();
 
 
-            if(params != null){
-                for(Symbol arg: params){
-                    if(arg.getName().equals(var))
+            if (params != null) {
+                for (Symbol arg : params) {
+                    if (arg.getName().equals(var))
                         return arg.getType();
                 }
             }
-            if(locals != null){
-                for(Symbol arg: locals){
-                    if(arg.getName().equals(var))
+            if (locals != null) {
+                for (Symbol arg : locals) {
+                    if (arg.getName().equals(var))
                         return arg.getType();
                 }
             }
 
-            if(fields != null){
-                for(Symbol arg: fields){
-                    if(arg.getName().equals(var))
+            if (fields != null) {
+                for (Symbol arg : fields) {
+                    if (arg.getName().equals(var))
                         return arg.getType();
                 }
             }
 
         }
 
-        if(node.getKind().equals("BinaryExpr")){
+        if (node.getKind().equals("BinaryExpr")) {
             String operator = node.get("op");
-            if(operator.equals("+") || operator.equals("-") || operator.equals("*") || operator.equals("/")){
+            if (operator.equals("+") || operator.equals("-") || operator.equals("*") || operator.equals("/")) {
                 return new Type("int", false);
             }
-            if(operator.equals("&&") || operator.equals("||")){
+            if (operator.equals("&&") || operator.equals("||")) {
                 return new Type("boolean", false);
             }
 
@@ -82,11 +85,47 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return new Type(node.getKind(), false);
     }
 
-    private Void visitLength(JmmNode node, SymbolTable table){
+    private Void visitLength(JmmNode node, SymbolTable table) {
         JmmNode array = node.getChild(0);
         Type arrayType = TypeUtils.getExprType(array, table);
-        if(!arrayType.isArray()){
+        if (!arrayType.isArray()) {
             String message = "Invalid length operation";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+        return null;
+    }
+
+    private Void visitReturnStmt(JmmNode node, SymbolTable table) {
+        JmmNode stmt = node.getChildren().get(0);
+        Type retType = TypeUtils.getExprType(stmt, table);
+        Type methodType = table.getReturnType(currentMethod);
+        if(retType == null){
+            String message = "Invalid return type";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+
+
+        if(!retType.getName().equals(methodType.getName())){
+            String message = "Invalid return type";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+        if (!methodType.getName().equals(retType.getName()) || methodType.isArray() != retType.isArray()) {
+            String message = "Invalid return type";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),
@@ -100,9 +139,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
 
-
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
+
         return null;
     }
 
@@ -135,6 +174,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                 .anyMatch(importDecl -> importDecl.endsWith(varRefName))) {
             return null; // Variable is an imported class or package, return
         }
+
 
         // Variable does not exist, create error report
         var message = String.format("Variable '%s' does not exist.", varRefName);
@@ -191,6 +231,12 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
 
+
+
+
+
+
+
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
         //Type arrayType = TypeUtils.getExprType(array, table);
         //Type indexType = TypeUtils.getExprType(array.getChild(1), table);
@@ -212,6 +258,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
         }
 
         if(!indexNodeType.getName().equals("IntegerLiteral")){
+            String message = "Invalid array access index, should be an integer.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(array),
+                    NodeUtils.getColumn(array),
+                    message, null)
+            );
+        }
+
+        if(!indexNodeType.getName().equals("IntegerLiteral") || indexNodeType.isArray()){
             String message = "Invalid array access index, should be an integer.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -284,6 +340,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }*/
 
 
+
+
     private Void visitBinaryExpr(JmmNode node, SymbolTable table) {
         JmmNode leftExpr = node.getChild(0);
         JmmNode rightExpr = node.getChild(1);
@@ -293,7 +351,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type rightType = TypeUtils.getExprType(rightExpr,table);
 
         // Check if the types are compatible for the binary operation
-        if (!(leftType.getName().equals("IntegerLiteral") || leftType.getName().equals("int")) || leftType.isArray()) {
+        if (!leftType.getName().equals("IntegerLiteral") || leftType.isArray()) {
             String message =("The type of left operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -303,7 +361,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
 
-        if (!(rightType.getName().equals("IntegerLiteral") || rightType.getName().equals("int")) || rightType.isArray()) {
+        if (!rightType.getName().equals("IntegerLiteral") || rightType.isArray()) {
             String message =("The type of right operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,

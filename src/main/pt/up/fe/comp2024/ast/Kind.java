@@ -34,11 +34,8 @@ public enum Kind {
     THIS,
 
     ARRAY_DECLARATION,
-
-    VAR_DECL,
     TYPE,
     METHOD_DECL,
-    PARAM,
     ASSIGN_STMT,
     RETURN_STMT,
     BINARY_EXPR,
@@ -48,6 +45,10 @@ public enum Kind {
     METHOD_DECLARATION,
     PARAM_DECLARATION,
     MAIN_PARAM_DECLARATION,
+
+    NEW_CLASS,
+
+    CONSTRUCTOR,
     IMPORT_DECL,
     VAR_DECLARATION,
     VAR_REF_EXPR, MAIN_DECL();
