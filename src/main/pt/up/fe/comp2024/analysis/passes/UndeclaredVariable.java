@@ -38,6 +38,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         //addVisit(Kind.ASSIGN_STMT, this::visitAssign);
         addVisit(Kind.LENGTH, this::visitLength);
         //addVisit(Kind.FUNCTION_CALL, this::visitMethodCall);
+        addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral);
 
 
     }
@@ -232,52 +233,75 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
 
+    private Void visitArrayLiteral(JmmNode arrayLiteral, SymbolTable table) {
+        // Get the expected type of the array elements (assuming it's the type of the first element)
+        // This part might need to be adjusted based on how you're handling type information in your AST
+        if (arrayLiteral.getNumChildren() == 0) return null; // Handle empty array initializations gracefully
 
+        Type expectedType = TypeUtils.getExprType(arrayLiteral.getChildren().get(0), table);
+
+        for (JmmNode element : arrayLiteral.getChildren()) {
+            Type elementType = TypeUtils.getExprType(element, table);
+            if (!TypeUtils.areTypesAssignable(elementType, expectedType)) {
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(element),
+                        NodeUtils.getColumn(element),
+                        String.format("Array initialization type mismatch: expected %s, found %s", expectedType, elementType),
+                        null
+                ));
+            }
+        }
+        return null;
+    }
+
+    public static boolean areTypesAssignable(Type sourceType, Type destinationType) {
+        if (sourceType.isArray() != destinationType.isArray()) return false;
+        if (sourceType.getName().equals(destinationType.getName())) return true;
+
+        // Expand this section to handle type promotions or specific cases like int to double, etc.
+        return false;
+    }
 
 
 
 
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
-        //Type arrayType = TypeUtils.getExprType(array, table);
-        //Type indexType = TypeUtils.getExprType(array.getChild(1), table);
-        JmmNode accessNode = array.getChildren().get(0);
+        // Get the node representing the array and the node representing the index
+        JmmNode arrayNode = array.getChildren().get(0);
         JmmNode indexNode = array.getChildren().get(1);
 
-        Type accessNodeType = getNodeType(accessNode, table);
-        Type indexNodeType = getNodeType(indexNode, table);
+        // Retrieve the types of the array node and the index node
+        Type arrayType = TypeUtils.getExprType(arrayNode, table);
+        Type indexType = TypeUtils.getExprType(indexNode, table);
 
-
-        if(!accessNodeType.isArray()){
-            String message = "Invalid array access";
+        // Check if the array node is actually an array
+        if (!arrayType.isArray()) {
+            String message = "Invalid array access: '" + arrayNode.get("name") + "' is not an array.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
-                    NodeUtils.getLine(array),
-                    NodeUtils.getColumn(array),
-                    message, null)
+                    NodeUtils.getLine(arrayNode),
+                    NodeUtils.getColumn(arrayNode),
+                    message,
+                    null)
             );
         }
 
-        if(!indexNodeType.getName().equals("IntegerLiteral")){
-            String message = "Invalid array access index, should be an integer.";
+        // Check if the index node is an integer
+        if (!indexType.getName().equals("int") || indexType.isArray()) {
+            String message = "Invalid array index type: Index must be an integer.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
-                    NodeUtils.getLine(array),
-                    NodeUtils.getColumn(array),
-                    message, null)
+                    NodeUtils.getLine(indexNode),
+                    NodeUtils.getColumn(indexNode),
+                    message,
+                    null)
             );
         }
 
-        if(!indexNodeType.getName().equals("IntegerLiteral") || indexNodeType.isArray()){
-            String message = "Invalid array access index, should be an integer.";
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(array),
-                    NodeUtils.getColumn(array),
-                    message, null)
-            );
-        }
         return null;
     }
+
 
 
 
@@ -375,6 +399,26 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
+    private Void visitAssignStmt(JmmNode assignStmt, SymbolTable table) {
+        JmmNode lhsNode = assignStmt.getChildren().get(0); // Assuming left-hand side is the first child
+        JmmNode rhsNode = assignStmt.getChildren().get(1); // Assuming right-hand side is the second child
+
+        Type lhsType = TypeUtils.getExprType(lhsNode, table);
+        Type rhsType = TypeUtils.getExprType(rhsNode, table);
+
+        // Check if types are compatible
+        if (!TypeUtils.areTypesAssignable(rhsType, lhsType)) {
+            String message = String.format("Type mismatch: cannot assign %s to %s", rhsType, lhsType);
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(assignStmt),
+                    NodeUtils.getColumn(assignStmt),
+                    message,
+                    null
+            ));
+        }
+        return null;
+    }
 
 
 
