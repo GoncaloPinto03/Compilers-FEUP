@@ -33,15 +33,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.CONDITION_STM, this::visitConditionStm);
         addVisit(Kind.NEGATION, this::visitNegation);
         addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
-        //addVisit(Kind.THIS, this::visitThis);
-        //addVisit(Kind.CONSTRUCTOR, this::visitArrayAccess);
-        //addVisit(Kind.ASSIGN_STMT, this::visitAssign);
         addVisit(Kind.LENGTH, this::visitLength);
-        //addVisit(Kind.FUNCTION_CALL, this::visitMethodCall);
         addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral);
-
-
+        addVisit(Kind.NEW_OBJECT, this::visitNewObject); // Register the visitor for new object nodes
     }
+
 
     private Type getNodeType(JmmNode node, SymbolTable table) {
         if (node.getKind().equals("VarRefExpr")) {
@@ -420,6 +416,64 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }
 
+    private Void visitIdUsage(JmmNode idNode, SymbolTable table) {
+        String identifier = idNode.get("name");
 
+        // Check if it's a variable or a field already declared
+        if (isDeclaredLocally(identifier, table)) {
+            return null; // It's a local or field variable, so it's fine
+        }
+
+        // Check if it's an imported class
+        if (!table.getImports().contains(identifier)) {
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(idNode),
+                    NodeUtils.getColumn(idNode),
+                    "Class '" + identifier + "' is not imported and not declared in the local file.",
+                    null
+            ));
+        }
+        return null;
+    }
+
+    private boolean isDeclaredLocally(String identifier, SymbolTable table) {
+        return table.getLocalVariables(currentMethod).stream().anyMatch(v -> v.getName().equals(identifier)) ||
+                table.getFields().stream().anyMatch(f -> f.getName().equals(identifier));
+    }
+    private Void visitClassUsage(JmmNode classUsageNode, SymbolTable table) {
+        String className = classUsageNode.get("name");
+
+        // Check if it's an imported class or declared locally
+        if (!table.getImports().contains(className) && !className.equals(table.getClassName())) {
+            String message = "Class '" + className + "' is not imported or declared.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(classUsageNode),
+                    NodeUtils.getColumn(classUsageNode),
+                    message,
+                    null
+            ));
+        }
+        return null;
+    }
+
+
+    private Void visitNewObject(JmmNode newNode, SymbolTable table) {
+        String className = newNode.get("className"); // Assuming the node stores class name in this attribute
+
+        // Check if class is imported or declared locally
+        if (!table.getImports().contains(className) && !className.equals(table.getClassName())) {
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(newNode),
+                    NodeUtils.getColumn(newNode),
+                    "Class '" + className + "' is not imported or declared in the current scope.",
+                    null
+            ));
+        }
+        // You might also want to check constructor parameters here
+        return null;
+    }
 
 }

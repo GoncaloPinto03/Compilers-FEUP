@@ -1,14 +1,12 @@
-class AssignIntToBool {
+class ClassNotImported {
 
     public static void main(String[] args) {
 
     }
 
-    public boolean foo() {
-        boolean a;
-
-        a = 10;
-
+    public int foo() {
+        int a;
+        a = A.bar();
         return a;
     }
 }
