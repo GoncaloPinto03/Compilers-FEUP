@@ -44,7 +44,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(VAR_DECLARATION, this::visitVarDecl);
-        addVisit(FUNCTION_CALL, this::visitFunctionCall);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -257,8 +256,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                     } else if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
                         code.append(child.getJmmChild(0).get("name")).append(".i32");
                     }
-                }else if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
-                    var childCode = visitFunctionCall(child.getJmmChild(0), null);
+                } else if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
+                    var childCode = visit(child);
                     code.append(childCode);
                 }
 
@@ -275,13 +274,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             code.append(END_STMT);
         }
 
-
         code.append(R_BRACKET);
         code.append(NL);
 
         return code.toString();
     }
-
 
     private String visitClass(JmmNode node, Void unused) {
 
@@ -320,31 +317,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(buildConstructor());
         code.append(R_BRACKET);
-
-        return code.toString();
-    }
-
-    private String visitFunctionCall(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-
-        // Extract the function name (e.g., "println")
-        String functionName = node.get("value");
-
-        // Build the OLLIR instruction for the function call
-        code.append("invokestatic(");
-        String importFunc = node.getJmmChild(0).get("name");
-        code.append(importFunc); // No target object for static method call
-        code.append(", \"");
-        code.append(functionName); // Method name (e.g., "println")
-        code.append("\"");
-
-        // Extract and append the argument of the function call
-        for (int i = 1; i < node.getNumChildren(); i++) {
-            code.append(", ");
-            code.append(exprVisitor.visit(node.getJmmChild(i)).getCode());
-        }
-
-        code.append(").V");
 
         return code.toString();
     }

@@ -28,6 +28,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(VAR_REF_EXPR, this::visitVarRef);
         addVisit(BINARY_EXPR, this::visitBinExpr);
         addVisit(INTEGER_LITERAL, this::visitInteger);
+        addVisit(FUNCTION_CALL, this::visitFunctionCall);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -64,6 +65,32 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 .append(rhs.getCode()).append(END_STMT);
 
         return new OllirExprResult(code, computation);
+    }
+
+    private OllirExprResult visitFunctionCall(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        // Extract the function name (e.g., "println")
+        String functionName = node.get("value");
+
+        // Build the OLLIR instruction for the function call
+        code.append("invokestatic(");
+        String importFunc = node.getJmmChild(0).get("name");
+        code.append(importFunc); // No target object for static method call
+        code.append(", \"");
+        code.append(functionName); // Method name (e.g., "println")
+        code.append("\"");
+
+        // Extract and append the argument of the function call
+        for (int i = 1; i < node.getNumChildren(); i++) {
+            code.append(", ");
+            code.append(visit(node.getJmmChild(i)).getCode());
+        }
+
+        code.append(").V");
+
+        return new OllirExprResult(code.toString());
+
     }
 
     private OllirExprResult visitVarRef(JmmNode node, Void unused) {
