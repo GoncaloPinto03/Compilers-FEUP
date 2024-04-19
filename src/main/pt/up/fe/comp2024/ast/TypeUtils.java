@@ -52,7 +52,7 @@ public class TypeUtils {
             case THIS -> new Type(table.getClassName(), false);
             //case METHODCALL -> getReturns (expr, table);
             case ARRAY_DECLARATION -> new Type(INT_TYPE_NAME, true);
-            case FUNCTION_CALL ->  table.getReturnType(expr.get("value"));
+            case METHOD_CALL ->  table.getReturnType(expr.get("value"));
             default ->
                     throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'.");
         };
@@ -92,12 +92,14 @@ public class TypeUtils {
         }
         if(symbol == null) {
             symbol = table.getParameters(methodNode.get("name")).stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
+            return new Type("undefined", false);
         }
 
+        return symbol.getType();
 
-        return new Type("undefined", false);
 
     }
+
 
 
     /**
