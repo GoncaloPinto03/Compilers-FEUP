@@ -116,6 +116,19 @@ public class UndeclaredVariable extends AnalysisVisitor {
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
 
+        // check if method is imported or extemded
+        if (table.getMethods().contains(currentMethod) || table.getImports().contains(currentMethod)) {
+            return null;
+        } else {
+            String message = "Method not declared";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    message, null)
+            );
+        }
+
         return null;
     }
 
@@ -411,12 +424,19 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         // Check if types are compatible
 
+        // check if one of the types is extended by the other
+        //if ((table.getSuper().equals(lhsType.getName()) && rhsType.getName().equals(table.getClassName()) || (table.getSuper().equals(rhsType.getName()) && lhsType.getName().equals(table.getClassName())))){
+          //  return null;
+        //}
+
+
         if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
             return null;
         }
 
         String extendedClass = table.getSuper();
-        if(lhsType.getName().equals(extendedClass) && rhsType.getName().equals(TypeUtils.getCurrentClass())){
+        var aux = table.getClassName();
+        if(lhsType.getName().equals(extendedClass) && rhsType.getName().equals(aux)){
             return null;
         }
 
@@ -480,7 +500,23 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Void visitMethodCall (JmmNode method, SymbolTable table){
 
+
+
         if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){
+            if (method.getNumChildren() > 0) {
+                JmmNode node = method.getChildren().get(0);
+
+                Type nodeType = TypeUtils.getExprType(node, table);
+                if (table.getSuper() != null && table.getImports() != null) {
+                    if (table.getSuper().contains(nodeType.getName()) || table.getImports().contains(nodeType.getName())) {
+                        return null;
+                    } else if (table.getClassName().equals(nodeType.getName())) {
+                        return null;
+                    }
+                }
+            } else if (table.getClassName().equals(method.get("value"))) {
+                return null;
+            }
             String message = "Method not declared";
             addReport(Report.newError(
                     Stage.SEMANTIC,
