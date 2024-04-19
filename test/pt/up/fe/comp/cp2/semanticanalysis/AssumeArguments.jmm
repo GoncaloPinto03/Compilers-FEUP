@@ -14,7 +14,7 @@ class AssumeArguments {
         a = new A();
         b = true;
 
-        c = a.foo(b);
+        c = a.foo(b, c);
         return c;
     }
 }

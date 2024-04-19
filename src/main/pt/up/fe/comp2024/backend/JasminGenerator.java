@@ -77,9 +77,17 @@ public class JasminGenerator {
 
         // generate class name
         var className = ollirResult.getOllirClass().getClassName();
-        code.append(".class ").append(className).append(NL).append(NL);
+        var classType = switch (ollirResult.getOllirClass().getClassAccessModifier()) {
+            case PUBLIC, DEFAULT -> "public ";
+            case PRIVATE -> "private ";
+            case PROTECTED -> "protected ";
+        };
+        code.append(".class ").append(classType).append(className).append(NL).append(NL);
 
-        String superclass = classUnit.getSuperClass() != null ? classUnit.getSuperClass() : "java/lang/Object";
+        String superclass = ollirResult.getOllirClass().getSuperClass() != null ? ollirResult.getOllirClass().getSuperClass() : "java/lang/Object";
+
+        if (superclass.equals("Object"))
+            superclass = "java/lang/Object";
 
         code.append(".super ").append(superclass).append(NL);
 
@@ -432,4 +440,3 @@ public class JasminGenerator {
         };
     }
 }
-

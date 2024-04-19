@@ -99,7 +99,7 @@ expression
     | expression LRECT expression RRECT #arrayAccess
     | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN #MethodCall
     | expression '.' 'length' #Length
-    | value = 'this' #Object
+    | 'this' #This
     | value = '!' expression #Negation
     | expression op=('*' | '/') expression #BinaryExpr
     | expression op=('+' | '-') expression #BinaryExpr

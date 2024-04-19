@@ -51,12 +51,12 @@ public class TypeUtils {
             case VAR_REF_EXPR -> getVarExprType(expr, table);
             case INTEGER_LITERAL -> new Type(INT_TYPE_NAME, false);
             case IDENTIFIER, NEGATION -> new Type("boolean", false);
-            case PARENTESIS, ARRAY_ACCESS -> getExprType(expr.getJmmChild(0), table);
+            case PARENTESIS -> getExprType(expr.getChild(0), table);
             case NEW_OBJECT -> new Type(expr.get("object"), false);
             case THIS -> new Type(table.getClassName(), false);
             case METHOD_CALL -> new Type(expr.get("value"), false);
             case ARRAY_DECLARATION -> new Type(INT_TYPE_NAME, true);
-
+            case ARRAY_ACCESS -> new Type(INT_TYPE_NAME, false);
             case ARRAY_LITERAL -> new Type(INT_TYPE_NAME, true);
             default ->
                     throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'.");
@@ -82,10 +82,6 @@ public class TypeUtils {
         };
     }
 
-
-
-
-
     private static Type getVarExprType(JmmNode varRefExpr, SymbolTable table) {
 
         String varName = varRefExpr.get("name");
@@ -102,9 +98,7 @@ public class TypeUtils {
 
         return symbol.getType();
 
-
     }
-
 
     /**
      * @param sourceType

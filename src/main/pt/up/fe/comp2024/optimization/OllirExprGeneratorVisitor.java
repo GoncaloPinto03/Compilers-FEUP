@@ -70,10 +70,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     private OllirExprResult visitMethodCall(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
-        // Extract the function name (e.g., "println")
         String functionName = node.get("value");
 
-        // Build the OLLIR instruction for the function call
         if (node.getJmmChild(0).getAttributes().contains("name")) {
             if (checkIfImport(node.getJmmChild(0).get("name"))) {
                 code.append("invokestatic(");
@@ -90,13 +88,11 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 code.append(table.getClassName());
             }
         }
-        //String importFunc = node.getJmmChild(0).get("name");
-        //code.append(importFunc); // No target object for static method call
+
         code.append(", \"");
-        code.append(functionName); // Method name (e.g., "println")
+        code.append(functionName);
         code.append("\"");
 
-        // Extract and append the argument of the function call
         for (int i = 1; i < node.getNumChildren(); i++) {
             code.append(", ");
             code.append(visit(node.getJmmChild(1)).getCode());
@@ -108,14 +104,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             code.append(").V");
         }
 
-        /*
-        if (checkIfImport(node.getJmmChild(0).get("name"))) {
-            code.append(").V");
-        } else {
-            code.append(").i32");
-        }
-
-         */
         code.append(END_STMT);
 
         return new OllirExprResult(code.toString());
