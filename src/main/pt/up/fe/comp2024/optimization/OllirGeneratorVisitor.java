@@ -44,7 +44,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(VAR_DECLARATION, this::visitVarDecl);
-        addVisit(FUNCTION_CALL, this::visitFunctionCall);
+        addVisit(METHOD_CALL, this::visitFunctionCall);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -243,12 +243,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                         code.append(child.getJmmChild(0).get("value")).append(".i32");
                     } else if (child.getJmmChild(0).getKind().equals("VarRefExpr")) {
                         code.append(child.getJmmChild(0).get("name")).append(".i32");
-                    } else if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
+                    } else if (child.getJmmChild(0).getKind().equals("MethodCall")) {
                         code.append(child.getJmmChild(0).get("name")).append(".i32");
                     }
                 }
 
-                if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
+                if (child.getJmmChild(0).getKind().equals("MethodCall")) {
                     var childCode = visitFunctionCall(child.getJmmChild(0), null);
                     code.append(childCode);
                 }

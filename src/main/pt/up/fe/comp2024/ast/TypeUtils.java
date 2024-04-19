@@ -6,21 +6,25 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
 import java.util.List;
+import java.util.Optional;
 
 public class TypeUtils {
 
     private String currentMethod;
-    private String currentClass;
+    private static String currentClass;
+
+
 
     public void setCurrentMethod(String method){
         this.currentMethod = method;
     }
 
-    public void setCurrentClass(String _class){this.currentClass = _class;}
+    public void setCurrentClass(String _class){currentClass = _class;}
 
     public String getCurrentMethod(){return this.currentMethod;}
 
-    public String getCurrentClass(){ return this.currentClass;}
+    public static String getCurrentClass(){ return
+        currentClass;}
 
     private static final String INT_TYPE_NAME = "int";
 
@@ -50,9 +54,10 @@ public class TypeUtils {
             case PARENTESIS, ARRAY_ACCESS -> getExprType(expr.getJmmChild(0), table);
             case NEW_OBJECT -> new Type(expr.get("object"), false);
             case THIS -> new Type(table.getClassName(), false);
-            //case METHODCALL -> getReturns (expr, table);
+            case METHOD_CALL -> new Type(expr.get("value"), false);
             case ARRAY_DECLARATION -> new Type(INT_TYPE_NAME, true);
-            case FUNCTION_CALL ->  table.getReturnType(expr.get("value"));
+            //case FUNCTION_CALL ->  table.getReturnType(expr.get("value"));
+            case ARRAY_LITERAL -> new Type(INT_TYPE_NAME, true);
             default ->
                     throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'.");
         };
@@ -60,7 +65,7 @@ public class TypeUtils {
         //return type;
     }
 
-    public Boolean importedClass(String className, SymbolTable table) {
+    public static Boolean importedClass(String className, SymbolTable table) {
         return table.getImports().stream().anyMatch(importDecl -> {String[] args = importDecl.split("\\.");
             return args[args.length - 1].equals(className);});
     }
@@ -107,7 +112,20 @@ public class TypeUtils {
      * @return true if sourceType can be assigned to destinationType
      */
     public static boolean areTypesAssignable(Type sourceType, Type destinationType) {
-        // TODO: Simple implementation that needs to be expanded
-        return sourceType.getName().equals(destinationType.getName());
+
+        // verify if the types are the same
+        if (sourceType.equals(destinationType)) {
+            return true;
+        }
+
+        // verify if the target is a generalization of the source
+        if (destinationType.hasAttribute("superclass")) {
+            return destinationType.getObject("superclass", String.class)
+                    .equals(sourceType.print());
+        }
+
+        return false;
     }
+
+
 }

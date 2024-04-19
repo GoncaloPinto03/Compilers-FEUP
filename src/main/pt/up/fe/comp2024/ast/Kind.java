@@ -9,11 +9,12 @@ import java.util.Set;
 public enum Kind {
     PROGRAM,
     CLASS_DECL,
+
+    METHOD_CALL,
     VARARG,
 
     NEGATION,
 
-    METHODCALL,
 
     CONDITION_STM,
 

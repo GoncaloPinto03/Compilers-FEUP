@@ -1,12 +1,12 @@
-class ClassNotImported {
-
-    public static void main(String[] args) {
-
-    }
+class Varargs {
 
     public int foo() {
         int a;
-        a = A.bar();
+        a = this.varargs(10, 20, 30);
         return a;
+    }
+
+    int a(int i, int...b){
+        this a();
     }
 }

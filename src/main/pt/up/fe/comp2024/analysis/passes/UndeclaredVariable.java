@@ -12,7 +12,9 @@ import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -35,52 +37,14 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
         addVisit(Kind.LENGTH, this::visitLength);
         addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral);
-        addVisit(Kind.NEW_OBJECT, this::visitNewObject); // Register the visitor for new object nodes
+        addVisit(Kind.NEW_OBJECT, this::visitNewObject);
+        addVisit(Kind.ASSIGN_STMT, this::visitAssignStmt);
+        addVisit(Kind.NEGATION, this::visitNegationExpr);
+        addVisit(Kind.METHOD_CALL, this::visitMethodCall);
+        //addVisit(Kind.PARAM_DECLARATION, this::visitParams);
+
     }
 
-
-    private Type getNodeType(JmmNode node, SymbolTable table) {
-        if (node.getKind().equals("VarRefExpr")) {
-            String var = node.get("name");
-            List<Symbol> params = table.getParameters(this.currentMethod);
-            List<Symbol> locals = table.getLocalVariables(this.currentMethod);
-            List<Symbol> fields = table.getFields();
-
-
-            if (params != null) {
-                for (Symbol arg : params) {
-                    if (arg.getName().equals(var))
-                        return arg.getType();
-                }
-            }
-            if (locals != null) {
-                for (Symbol arg : locals) {
-                    if (arg.getName().equals(var))
-                        return arg.getType();
-                }
-            }
-
-            if (fields != null) {
-                for (Symbol arg : fields) {
-                    if (arg.getName().equals(var))
-                        return arg.getType();
-                }
-            }
-
-        }
-
-        if (node.getKind().equals("BinaryExpr")) {
-            String operator = node.get("op");
-            if (operator.equals("+") || operator.equals("-") || operator.equals("*") || operator.equals("/")) {
-                return new Type("int", false);
-            }
-            if (operator.equals("&&") || operator.equals("||")) {
-                return new Type("boolean", false);
-            }
-
-        }
-        return new Type(node.getKind(), false);
-    }
 
     private Void visitLength(JmmNode node, SymbolTable table) {
         JmmNode array = node.getChild(0);
@@ -111,6 +75,19 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
 
+        if(retType.getName().equals("imported")){
+            return null;
+        }
+
+        if(retType.hasAttribute("vararg") && stmt.getKind().equals("ArrayAccess")){
+            String message = "Invalid return type, varargs cannot be used in array access";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
 
         if(!retType.getName().equals(methodType.getName())){
             String message = "Invalid return type";
@@ -234,6 +211,12 @@ public class UndeclaredVariable extends AnalysisVisitor {
         // This part might need to be adjusted based on how you're handling type information in your AST
         if (arrayLiteral.getNumChildren() == 0) return null; // Handle empty array initializations gracefully
 
+        JmmNode lhsNode = arrayLiteral.getChildren().get(0); // Assuming left-hand side is the first child
+        JmmNode rhsNode = arrayLiteral.getChildren().get(1); // Assuming right-hand side is the second child
+
+        Type lhsType = TypeUtils.getExprType(lhsNode, table);
+        Type rhsType = TypeUtils.getExprType(rhsNode, table);
+
         Type expectedType = TypeUtils.getExprType(arrayLiteral.getChildren().get(0), table);
 
         for (JmmNode element : arrayLiteral.getChildren()) {
@@ -247,6 +230,30 @@ public class UndeclaredVariable extends AnalysisVisitor {
                         null
                 ));
             }
+        }
+
+        // Check if the right-hand side is an array literal and the left-hand side is not an array
+        if (rhsNode.getKind().equals("ARRAY_LITERAL") && !lhsType.isArray()) {
+            String message = "Cannot assign an array literal to a non-array variable.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(arrayLiteral),
+                    NodeUtils.getColumn(arrayLiteral),
+                    message,
+                    null
+            ));
+        }
+
+        // Check if types are compatible for other cases (e.g., variable assignment)
+        if (!TypeUtils.areTypesAssignable(rhsType, lhsType)) {
+            String message = String.format("Type mismatch: cannot assign %s to %s", rhsType, lhsType);
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(arrayLiteral),
+                    NodeUtils.getColumn(arrayLiteral),
+                    message,
+                    null
+            ));
         }
         return null;
     }
@@ -272,7 +279,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type indexType = TypeUtils.getExprType(indexNode, table);
 
         // Check if the array node is actually an array
-        if (!arrayType.isArray()) {
+        if (!arrayType.isArray()){
             String message = "Invalid array access: '" + arrayNode.get("name") + "' is not an array.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -284,7 +291,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         }
 
         // Check if the index node is an integer
-        if (!indexType.getName().equals("int") || indexType.isArray()) {
+        if (!indexType.getName().equals("int") || indexType.isArray() || indexType.hasAttribute("vararg")) {
             String message = "Invalid array index type: Index must be an integer.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -322,7 +329,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
-    /*private Void visitNegationExpr(JmmNode node, SymbolTable table){
+    private Void visitNegationExpr(JmmNode node, SymbolTable table){
         node.put("type", "boolean");
         if(!node.getChild(0).get("type").equals("boolean")){
             String message = "Invalid";
@@ -335,7 +342,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         }
 
         return null;
-    }*/
+    }
 
     /*private Void visitReturnStmt(JmmNode node, SymbolTable table) {
         JmmNode stmt = node.getChildren().get(0);
@@ -403,6 +410,37 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type rhsType = TypeUtils.getExprType(rhsNode, table);
 
         // Check if types are compatible
+
+        if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
+            return null;
+        }
+
+        String extendedClass = table.getSuper();
+        if(lhsType.getName().equals(extendedClass) && rhsType.getName().equals(TypeUtils.getCurrentClass())){
+            return null;
+        }
+
+        if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() != rhsType.isArray()){
+            String message = "Type mismatch: cannot assign array to an int";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(assignStmt),
+                    NodeUtils.getColumn(assignStmt),
+                    message,
+                    null
+            ));
+
+        }
+
+        if(TypeUtils.importedClass(lhsType.getName(), table) && TypeUtils.importedClass(rhsType.getName(), table)){
+            return null;
+        }
+
+        if(rhsType.getName().equals("ArrayLiteral") && lhsType.isArray()){
+            return null;
+        }
+
+
         if (!TypeUtils.areTypesAssignable(rhsType, lhsType)) {
             String message = String.format("Type mismatch: cannot assign %s to %s", rhsType, lhsType);
             addReport(Report.newError(
@@ -413,48 +451,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     null
             ));
         }
-        return null;
-    }
 
-    private Void visitIdUsage(JmmNode idNode, SymbolTable table) {
-        String identifier = idNode.get("name");
 
-        // Check if it's a variable or a field already declared
-        if (isDeclaredLocally(identifier, table)) {
-            return null; // It's a local or field variable, so it's fine
-        }
 
-        // Check if it's an imported class
-        if (!table.getImports().contains(identifier)) {
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(idNode),
-                    NodeUtils.getColumn(idNode),
-                    "Class '" + identifier + "' is not imported and not declared in the local file.",
-                    null
-            ));
-        }
-        return null;
-    }
-
-    private boolean isDeclaredLocally(String identifier, SymbolTable table) {
-        return table.getLocalVariables(currentMethod).stream().anyMatch(v -> v.getName().equals(identifier)) ||
-                table.getFields().stream().anyMatch(f -> f.getName().equals(identifier));
-    }
-    private Void visitClassUsage(JmmNode classUsageNode, SymbolTable table) {
-        String className = classUsageNode.get("name");
-
-        // Check if it's an imported class or declared locally
-        if (!table.getImports().contains(className) && !className.equals(table.getClassName())) {
-            String message = "Class '" + className + "' is not imported or declared.";
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(classUsageNode),
-                    NodeUtils.getColumn(classUsageNode),
-                    message,
-                    null
-            ));
-        }
         return null;
     }
 
@@ -475,5 +474,29 @@ public class UndeclaredVariable extends AnalysisVisitor {
         // You might also want to check constructor parameters here
         return null;
     }
+
+
+
+
+    private Void visitMethodCall (JmmNode method, SymbolTable table){
+
+        if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){
+            String message = "Method not declared";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    message, null)
+            );
+        }
+
+
+        return null;
+    }
+
+
+
+
+
 
 }

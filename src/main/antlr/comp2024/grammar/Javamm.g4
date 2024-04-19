@@ -87,17 +87,17 @@ statement
     | 'if' LPAREN expression RPAREN statement 'else' statement #ConditionStm
     | 'while' LPAREN expression RPAREN statement #ConditionStm
     | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
-    | expression ';' #assignStmt
-    | var=ID '=' expression ';' #assignStmt
+    | expression ';' #exprStmt
+    | expression '=' expression ';' #assignStmt
     | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
     ;
 
 expression
     : LPAREN expression RPAREN  #Parentesis
     | 'new' 'int' LRECT expression RRECT #ArrayDeclaration
-    | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN  #NewClass
+    | 'new' value=ID LPAREN (expression (',' expression) *)? RPAREN  #MethodCall
     | expression LRECT expression RRECT #arrayAccess
-    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN #FunctionCall
+    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN #MethodCall
     | expression '.' 'length' #Length
     | value = 'this' #Object
     | value = '!' expression #Negation
@@ -112,5 +112,4 @@ expression
     | value='false' #Identifier
     | value=ID op=('++' | '--') #Increment
     | name = ID #VarRefExpr
-
     ;
