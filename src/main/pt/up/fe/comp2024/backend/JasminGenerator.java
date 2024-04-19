@@ -294,7 +294,7 @@ public class JasminGenerator {
 
     private String generateCall(CallInstruction callInstruction) {
         var code  = new StringBuilder();
-        var operand = (Operand) callInstruction.getOperands().getFirst();
+        var operand = (Operand) callInstruction.getOperands().get(0);
 
         var invocationType = callInstruction.getInvocationType();
 
@@ -357,7 +357,7 @@ public class JasminGenerator {
     private String invokeStatic(CallInstruction callInstruction) {
         var code = new StringBuilder();
 
-        var callerOperandName = callInstruction.getOperands().getFirst().getClass().getName();
+        var callerOperandName = callInstruction.getOperands().get(0).getClass().getName();
         code.append("invokestatic ").append(callerOperandName).append("/");
 
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
@@ -382,7 +382,7 @@ public class JasminGenerator {
     private String generatePutField(PutFieldInstruction putFieldInstruction) {
         var code = new StringBuilder();
 
-        var firstOperand = putFieldInstruction.getOperands().getFirst();
+        var firstOperand = putFieldInstruction.getOperands().get(0);
         var callerType = (ClassType) firstOperand.getType();
         var field = (Operand) putFieldInstruction.getOperands().get(1);
         var fieldType = field.getType().getTypeOfElement();
@@ -399,7 +399,7 @@ public class JasminGenerator {
     private String generateGetField(GetFieldInstruction getFieldInstruction) {
         var code = new StringBuilder();
 
-        var firstOperand = getFieldInstruction.getOperands().getFirst();
+        var firstOperand = getFieldInstruction.getOperands().get(0);
         var callerType = (ClassType) firstOperand.getType();
         var field = (Operand) getFieldInstruction.getOperands().get(1);
         var fieldType = field.getType().getTypeOfElement();
