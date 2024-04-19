@@ -56,7 +56,7 @@ public class TypeUtils {
             case THIS -> new Type(table.getClassName(), false);
             case METHOD_CALL -> new Type(expr.get("value"), false);
             case ARRAY_DECLARATION -> new Type(INT_TYPE_NAME, true);
-            //case FUNCTION_CALL ->  table.getReturnType(expr.get("value"));
+
             case ARRAY_LITERAL -> new Type(INT_TYPE_NAME, true);
             default ->
                     throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'.");
