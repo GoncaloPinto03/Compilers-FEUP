@@ -109,9 +109,15 @@ public class JasminGenerator {
             code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldType).append(NL);
         }
 
+
+
+        boolean hasExplicitConstructors = ollirResult.getOllirClass().getMethods().stream()
+                .anyMatch(Method::isConstructMethod);
+        if (!hasExplicitConstructors) {
+            code.append(";default constructor");
+        }
         // generate a single constructor method
         var defaultConstructor = """
-                ;default constructor
                 .method public <init>()V
                     aload_0
                     invokespecial""" + " " + superclass + """
@@ -120,6 +126,7 @@ public class JasminGenerator {
                 .end method
                 """;
         code.append(defaultConstructor);
+
 
         // generate code for all other methods
         for (var method : ollirResult.getOllirClass().getMethods()) {
@@ -364,9 +371,13 @@ public class JasminGenerator {
 
     private String invokeStatic(CallInstruction callInstruction) {
         var code = new StringBuilder();
+        for (Element op : callInstruction.getArguments()) {
+            code.append(generators.apply(op));
+        }
 
-        var callerOperandName = callInstruction.getOperands().get(0).getClass().getName();
-        code.append("invokestatic ").append(callerOperandName).append("/");
+        var callerOperand = (Operand) callInstruction.getOperands().get(0);
+        var callerName = callerOperand.getName();
+        code.append("invokestatic ").append(callerName).append("/");
 
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
         code.append(literal.getLiteral().replace("\"", ""));
