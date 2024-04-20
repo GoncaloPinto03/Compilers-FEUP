@@ -68,7 +68,7 @@ mainParam:
 
 type locals [boolean isArray = false]
     : value='int' ('['{$isArray = true;}']')? #VARIABLE_INT   // variable number of integers
-    | value='int' ('...')? #VARARG //??
+    | value='int' '...'{$isArray=true;} #VARARG //??
     | value='boolean'      #BOOL                        // Boolean
     | value='double'       #DOUBLE                     // Double
     | value='float'        #FLOAT             // Float

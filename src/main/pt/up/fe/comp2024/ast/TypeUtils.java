@@ -93,6 +93,8 @@ public class TypeUtils {
         }
         if(symbol == null) {
             symbol = table.getParameters(methodNode.get("name")).stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
+        }
+        if(symbol == null){
             return new Type("undefined", false);
         }
 

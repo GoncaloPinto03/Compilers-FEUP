@@ -130,8 +130,14 @@ public class UndeclaredVariable extends AnalysisVisitor {
                         message, null)
                 );
             }
+            var pos = 0;
+            for (var paramsAux : method.getChildren("ParamDeclaration")) {
+                if (paramsAux.getChild(0).getKind().equals("VARARG")) {
+                    pos = method.getChildren().indexOf(paramsAux)-1;
+                }
+            }
             JmmNode lastParamNode = method.getChild(method.getChildren().size()-1);
-            if (!lastParamNode.getChild(0).getKind().equals("VARARG") && !lastParamNode.getChild(0).getKind().equals("ArrayAccess") ) {
+            if (method.getChildren("ParamDeclaration").size() - 1 != pos) {
                 String message = "Vararg must be the last parameter";
                 addReport(Report.newError(
                         Stage.SEMANTIC,
@@ -139,6 +145,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
                         NodeUtils.getColumn(method),
                         message, null)
                 );
+            }
+                if (!lastParamNode.getChild(0).getKind().equals("VARARG") && !lastParamNode.getChild(0).getKind().equals("ArrayAccess") ) {
+
+                    String message = "Vararg must be the last parameter";
+                    addReport(Report.newError(
+                            Stage.SEMANTIC,
+                            NodeUtils.getLine(method),
+                            NodeUtils.getColumn(method),
+                            message, null)
+                    );
+
             }
         }
 
@@ -414,6 +431,12 @@ public class UndeclaredVariable extends AnalysisVisitor {
         if (rhsNode.getKind().equals("MethodCall")) {
             var aux3 = rhsNode.getJmmChild(0);
             if (table.getImports().contains(TypeUtils.getExprType(aux3, table).getName())) {
+                return null;
+            }
+        }
+
+        if (rhsNode.getKind().equals("MethodCall")) {
+            if (table.getMethods().contains(TypeUtils.getExprType(rhsNode, table).getName())) {
                 return null;
             }
         }
