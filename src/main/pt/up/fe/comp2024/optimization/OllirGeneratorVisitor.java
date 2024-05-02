@@ -397,8 +397,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
-<<<<<<< Updated upstream
-=======
     private String visitFunctionCall(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
@@ -424,7 +422,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
->>>>>>> Stashed changes
     private boolean checkIfImport(String name) {
         for (var importID : table.getImports()) {
             if (importID.equals(name)) {
