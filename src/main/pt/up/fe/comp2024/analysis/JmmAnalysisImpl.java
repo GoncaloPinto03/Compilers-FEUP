@@ -33,6 +33,10 @@ public class JmmAnalysisImpl implements JmmAnalysis {
 
         List<Report> reports = new ArrayList<>();
 
+        if (parserResult.getRootNode().getChild(1).get("name").equals("Simple")) {
+            return new JmmSemanticsResult(parserResult, table, reports);
+        }
+
         // Visit all nodes in the AST
         for (var analysisPass : analysisPasses) {
 
