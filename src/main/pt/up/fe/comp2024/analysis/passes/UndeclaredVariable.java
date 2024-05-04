@@ -1,5 +1,6 @@
 package pt.up.fe.comp2024.analysis.passes;
 
+import com.sun.source.doctree.SystemPropertyTree;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
@@ -37,11 +38,10 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
         addVisit(Kind.LENGTH, this::visitLength);
         addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral);
-        addVisit(Kind.NEW_OBJECT, this::visitNewObject);
         addVisit(Kind.ASSIGN_STMT, this::visitAssignStmt);
         addVisit(Kind.NEGATION, this::visitNegationExpr);
         addVisit(Kind.METHOD_CALL, this::visitMethodCall);
-        //addVisit(Kind.PARAM_DECLARATION, this::visitParams);
+        addVisit(Kind.NEW_CLASS, this::visitNewClass);
 
     }
 
@@ -73,6 +73,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     NodeUtils.getColumn(node),
                     message, null)
             );
+            return null;
         }
 
         if(retType.getName().equals("imported")){
@@ -115,6 +116,50 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
+        List<JmmNode> params=method.getChildren("ParamDeclaration");
+
+        var nrVarags = params.stream().filter(
+                param->param.getChild(0).getKind().equals("VARARG")
+        ).count();
+
+        if (nrVarags > 0) {
+            if (nrVarags > 1) {
+                String message = "Invalid number of varargs";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(method),
+                        NodeUtils.getColumn(method),
+                        message, null)
+                );
+            }
+            var pos = 0;
+            for (var paramsAux : method.getChildren("ParamDeclaration")) {
+                if (paramsAux.getChild(0).getKind().equals("VARARG")) {
+                    pos = method.getChildren().indexOf(paramsAux)-1;
+                }
+            }
+            JmmNode lastParamNode = method.getChild(method.getChildren().size()-1);
+            if (method.getChildren("ParamDeclaration").size() - 1 != pos) {
+                String message = "Vararg must be the last parameter";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(method),
+                        NodeUtils.getColumn(method),
+                        message, null)
+                );
+            }
+            if (!lastParamNode.getChild(0).getKind().equals("VARARG") && !lastParamNode.getChild(0).getKind().equals("ArrayAccess") ) {
+
+                String message = "Vararg must be the last parameter";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(method),
+                        NodeUtils.getColumn(method),
+                        message, null)
+                );
+
+            }
+        }
 
         // check if method is imported or extemded
         if (table.getMethods().contains(currentMethod) || table.getImports().contains(currentMethod)) {
@@ -194,31 +239,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }
 
-
-
-    private Void visitBooleanExpr (JmmNode node, SymbolTable table){
-        JmmNode leftExpr = node.getChild(0);
-        JmmNode rightExpr = node.getChild(1);
-
-
-        Type leftType = TypeUtils.getExprType(leftExpr,table);
-        Type rightType = TypeUtils.getExprType(rightExpr,table);
-
-        if(!leftType.getName().equals("boolean") || !rightType.getName().equals("boolean")){
-            String message = "Invalid";
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(node),
-                    NodeUtils.getColumn(node),
-                    message, null)
-            );
-        }
-        return null;
-    }
-
-
-
-
     private Void visitArrayLiteral(JmmNode arrayLiteral, SymbolTable table) {
         // Get the expected type of the array elements (assuming it's the type of the first element)
         // This part might need to be adjusted based on how you're handling type information in your AST
@@ -271,16 +291,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }
 
-    public static boolean areTypesAssignable(Type sourceType, Type destinationType) {
-        if (sourceType.isArray() != destinationType.isArray()) return false;
-        if (sourceType.getName().equals(destinationType.getName())) return true;
-
-        // Expand this section to handle type promotions or specific cases like int to double, etc.
-        return false;
-    }
-
-
-
 
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
         // Get the node representing the array and the node representing the index
@@ -319,13 +329,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
-
-
-
-
-
-
-
     private Void visitConditionStm (JmmNode node, SymbolTable table){
         JmmNode condition = node.getChild(0);
         Type conditionType = TypeUtils.getExprType(condition, table);
@@ -357,31 +360,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }
 
-    /*private Void visitReturnStmt(JmmNode node, SymbolTable table) {
-        JmmNode stmt = node.getChildren().get(0);
-        Type retType = TypeUtils.getExprType(stmt, table);
-        Type methodType = table.getReturnType(currentMethod);
-
-        if(retType.getName().equals("imported")){
-            return null;
-        }
-        if(!methodType.getName().equals(retType.getName()) || methodType.isArray() != retType.isArray()){
-            String message = "Invalid return type";
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(node),
-                    NodeUtils.getColumn(node),
-                    message, null)
-            );
-        }
-
-
-        return null;
-    }*/
-
-
-
-
     private Void visitBinaryExpr(JmmNode node, SymbolTable table) {
         JmmNode leftExpr = node.getChild(0);
         JmmNode rightExpr = node.getChild(1);
@@ -391,7 +369,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type rightType = TypeUtils.getExprType(rightExpr,table);
 
         // Check if the types are compatible for the binary operation
-        if (!leftType.getName().equals("IntegerLiteral") || leftType.isArray()) {
+        if (!leftType.getName().equals("int") || leftType.isArray()) {
             String message =("The type of left operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -401,7 +379,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
 
-        if (!rightType.getName().equals("IntegerLiteral") || rightType.isArray()) {
+        if (!rightType.getName().equals("int") || rightType.isArray()) {
             String message =("The type of right operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -416,23 +394,24 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitAssignStmt(JmmNode assignStmt, SymbolTable table) {
-        JmmNode lhsNode = assignStmt.getChildren().get(0); // Assuming left-hand side is the first child
-        JmmNode rhsNode = assignStmt.getChildren().get(1); // Assuming right-hand side is the second child
+        JmmNode lhsNode = assignStmt.getChildren().get(0);
+        JmmNode rhsNode = assignStmt.getChildren().get(1);
 
         Type lhsType = TypeUtils.getExprType(lhsNode, table);
         Type rhsType = TypeUtils.getExprType(rhsNode, table);
 
-        // Check if types are compatible
-
-        // check if one of the types is extended by the other
-        //if ((table.getSuper().equals(lhsType.getName()) && rhsType.getName().equals(table.getClassName()) || (table.getSuper().equals(rhsType.getName()) && lhsType.getName().equals(table.getClassName())))){
-        //  return null;
-        //}
-
+        if(rhsType == null){
+            return null;
+        }
 
         if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
             return null;
         }
+
+        if(TypeUtils.importedClass(lhsType.getName(), table) && TypeUtils.importedClass(rhsType.getName(), table)){
+            return null;
+        }
+
 
         String extendedClass = table.getSuper();
         var aux = table.getClassName();
@@ -452,14 +431,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         }
 
-        if(TypeUtils.importedClass(lhsType.getName(), table) && TypeUtils.importedClass(rhsType.getName(), table)){
-            return null;
-        }
-
         if(rhsType.getName().equals("ArrayLiteral") && lhsType.isArray()){
             return null;
         }
 
+        if (rhsNode.getKind().equals("MethodCall")) {
+            var aux3 = rhsNode.getJmmChild(0);
+            if (table.getImports().contains(TypeUtils.getExprType(aux3, table).getName())) {
+                return null;
+            }
+        }
 
         if (!TypeUtils.areTypesAssignable(rhsType, lhsType)) {
             String message = String.format("Type mismatch: cannot assign %s to %s", rhsType, lhsType);
@@ -471,38 +452,41 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     null
             ));
         }
-
-
-
         return null;
     }
 
 
-    private Void visitNewObject(JmmNode newNode, SymbolTable table) {
-        String className = newNode.get("className"); // Assuming the node stores class name in this attribute
 
-        // Check if class is imported or declared locally
-        if (!table.getImports().contains(className) && !className.equals(table.getClassName())) {
+    private Void visitNewClass(JmmNode node, SymbolTable table) {
+        if(table.getImports().stream().noneMatch(name -> name.equals(node.get("value"))) && !(node.get("value").equals(table.getClassName()))){
+            String message = "Class is not defined";
             addReport(Report.newError(
                     Stage.SEMANTIC,
-                    NodeUtils.getLine(newNode),
-                    NodeUtils.getColumn(newNode),
-                    "Class '" + className + "' is not imported or declared in the current scope.",
-                    null
-            ));
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message,
+                    null)
+            );
         }
-        // You might also want to check constructor parameters here
+
+        node.put("type", node.get("value"));
+        node.put("isArray", "false");
         return null;
     }
-
-
-
-
     private Void visitMethodCall (JmmNode method, SymbolTable table){
 
-
+        if(table.getMethods().contains(method.get("value")) || table.getImports().contains(method.get("value"))){
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    "Method not declared",
+                    null)
+            );
+        }
 
         if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){
+
             if (method.getNumChildren() > 0) {
                 JmmNode node = method.getChildren().get(0);
 
@@ -517,6 +501,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
             } else if (table.getClassName().equals(method.get("value"))) {
                 return null;
             }
+            if (method.getKind().equals("MethodCall")) {
+                JmmNode rhsNode = method.getChildren().get(0);
+                Type rhsNodeType = TypeUtils.getExprType(rhsNode, table);
+                if (rhsNodeType != null && table.getImports().contains(rhsNodeType.getName())) {
+                    return null;
+                }
+            }
+            if (table.getImports().contains(method.getJmmChild(0).get("name"))){
+                return null;
+            }
             String message = "Method not declared";
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -526,12 +520,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
 
-
         return null;
     }
-
-
-
 
 
 
