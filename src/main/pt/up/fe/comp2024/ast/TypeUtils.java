@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class TypeUtils {
@@ -52,9 +53,9 @@ public class TypeUtils {
             case INTEGER_LITERAL -> new Type(INT_TYPE_NAME, false);
             case IDENTIFIER, NEGATION -> new Type("boolean", false);
             case PARENTESIS -> getExprType(expr.getChild(0), table);
-            case NEW_OBJECT -> new Type(expr.get("object"), false);
+            case NEW_CLASS -> new Type(expr.get("value"), false);
             case THIS -> new Type(table.getClassName(), false);
-            case METHOD_CALL -> new Type(expr.get("value"), false);
+            case METHOD_CALL -> getReturnType(expr, table);
             case ARRAY_DECLARATION -> new Type(INT_TYPE_NAME, true);
             case ARRAY_ACCESS -> new Type(INT_TYPE_NAME, false);
             case ARRAY_LITERAL -> new Type(INT_TYPE_NAME, true);
@@ -66,8 +67,11 @@ public class TypeUtils {
     }
 
     public static Boolean importedClass(String className, SymbolTable table) {
-        return table.getImports().stream().anyMatch(importDecl -> {String[] args = importDecl.split("\\.");
-            return args[args.length - 1].equals(className);});
+        return table.getImports().stream()
+                .anyMatch(importDecl -> {
+                    String[] segments = importDecl.split("\\.");
+                    return segments[segments.length - 1].equals(className);
+                });
     }
 
     private static Type getBinExprType(JmmNode binaryExpr) {
@@ -95,7 +99,7 @@ public class TypeUtils {
             symbol = table.getParameters(methodNode.get("name")).stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
         }
         if(symbol == null){
-            return new Type("undefined", false);
+            return null;
         }
 
         return symbol.getType();
@@ -123,5 +127,22 @@ public class TypeUtils {
         return false;
     }
 
+    public static Type getReturnType(JmmNode methodCall, SymbolTable table) {
+        String methodName = methodCall.get("value");
+        JmmNode x = methodCall.getChild(0);
+        Type classType = getExprType(x, table);
+        if(classType==null){
+            return null;
+        }
+        if (Objects.equals(classType.getName(), "this") || Objects.equals(classType.getName(), table.getClassName())) {
+            return table.getReturnType(methodName);
+        } else {
+            if (!importedClass(classType.getName(), table)) {
+                return null;
+            }
+            return new Type("undefined", false);
+        }
+
+    }
 
 }

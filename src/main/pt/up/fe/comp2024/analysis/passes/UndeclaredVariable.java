@@ -1,5 +1,6 @@
 package pt.up.fe.comp2024.analysis.passes;
 
+import com.sun.source.doctree.SystemPropertyTree;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
@@ -37,10 +38,10 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
         addVisit(Kind.LENGTH, this::visitLength);
         addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral);
-        addVisit(Kind.NEW_OBJECT, this::visitNewObject);
         addVisit(Kind.ASSIGN_STMT, this::visitAssignStmt);
         addVisit(Kind.NEGATION, this::visitNegationExpr);
         addVisit(Kind.METHOD_CALL, this::visitMethodCall);
+        addVisit(Kind.NEW_CLASS, this::visitNewClass);
 
     }
 
@@ -72,6 +73,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     NodeUtils.getColumn(node),
                     message, null)
             );
+            return null;
         }
 
         if(retType.getName().equals("imported")){
@@ -367,7 +369,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type rightType = TypeUtils.getExprType(rightExpr,table);
 
         // Check if the types are compatible for the binary operation
-        if (!leftType.getName().equals("IntegerLiteral") || leftType.isArray()) {
+        if (!leftType.getName().equals("int") || leftType.isArray()) {
             String message =("The type of left operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -377,7 +379,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
 
-        if (!rightType.getName().equals("IntegerLiteral") || rightType.isArray()) {
+        if (!rightType.getName().equals("int") || rightType.isArray()) {
             String message =("The type of right operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -398,9 +400,18 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type lhsType = TypeUtils.getExprType(lhsNode, table);
         Type rhsType = TypeUtils.getExprType(rhsNode, table);
 
+        if(rhsType == null){
+            return null;
+        }
+
         if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
             return null;
         }
+
+        if(TypeUtils.importedClass(lhsType.getName(), table) && TypeUtils.importedClass(rhsType.getName(), table)){
+            return null;
+        }
+
 
         String extendedClass = table.getSuper();
         var aux = table.getClassName();
@@ -420,10 +431,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         }
 
-        if(TypeUtils.importedClass(lhsType.getName(), table) && TypeUtils.importedClass(rhsType.getName(), table)){
-            return null;
-        }
-
         if(rhsType.getName().equals("ArrayLiteral") && lhsType.isArray()){
             return null;
         }
@@ -431,12 +438,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         if (rhsNode.getKind().equals("MethodCall")) {
             var aux3 = rhsNode.getJmmChild(0);
             if (table.getImports().contains(TypeUtils.getExprType(aux3, table).getName())) {
-                return null;
-            }
-        }
-
-        if (rhsNode.getKind().equals("MethodCall")) {
-            if (table.getMethods().contains(TypeUtils.getExprType(rhsNode, table).getName())) {
                 return null;
             }
         }
@@ -454,24 +455,38 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }
 
-    private Void visitNewObject(JmmNode newNode, SymbolTable table) {
-        String className = newNode.get("className");
 
-         if (!table.getImports().contains(className) && !className.equals(table.getClassName())) {
+
+    private Void visitNewClass(JmmNode node, SymbolTable table) {
+        if(table.getImports().stream().noneMatch(name -> name.equals(node.get("value"))) && !(node.get("value").equals(table.getClassName()))){
+            String message = "Class is not defined";
             addReport(Report.newError(
                     Stage.SEMANTIC,
-                    NodeUtils.getLine(newNode),
-                    NodeUtils.getColumn(newNode),
-                    "Class '" + className + "' is not imported or declared in the current scope.",
-                    null
-            ));
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message,
+                    null)
+            );
         }
+
+        node.put("type", node.get("value"));
+        node.put("isArray", "false");
         return null;
     }
-
     private Void visitMethodCall (JmmNode method, SymbolTable table){
 
+        if(table.getMethods().contains(method.get("value")) || table.getImports().contains(method.get("value"))){
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    "Method not declared",
+                    null)
+            );
+        }
+
         if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){
+
             if (method.getNumChildren() > 0) {
                 JmmNode node = method.getChildren().get(0);
 
@@ -487,8 +502,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
                 return null;
             }
             if (method.getKind().equals("MethodCall")) {
-                var aux3 = method.getJmmChild(0);
-                if (table.getImports().contains(TypeUtils.getExprType(aux3, table).getName())) {
+                JmmNode rhsNode = method.getChildren().get(0);
+                Type rhsNodeType = TypeUtils.getExprType(rhsNode, table);
+                if (rhsNodeType != null && table.getImports().contains(rhsNodeType.getName())) {
                     return null;
                 }
             }
@@ -506,5 +522,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         return null;
     }
+
+
 
 }

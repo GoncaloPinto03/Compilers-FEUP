@@ -38,7 +38,10 @@ public class JmmAnalysisImpl implements JmmAnalysis {
 
             try {
                 var passReports = analysisPass.analyze(rootNode, table);
-                reports.addAll(passReports);
+                if(!passReports.isEmpty()) {
+                    reports.addAll(passReports);
+                    break;
+                }
             } catch (Exception e) {
                 reports.add(Report.newError(Stage.SEMANTIC,
                         -1,
@@ -46,6 +49,7 @@ public class JmmAnalysisImpl implements JmmAnalysis {
                         "Problem while executing analysis pass '" + analysisPass.getClass() + "'",
                         e)
                 );
+                break;
             }
 
         }
