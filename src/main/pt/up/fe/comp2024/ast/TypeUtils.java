@@ -6,7 +6,6 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 public class TypeUtils {
@@ -25,7 +24,7 @@ public class TypeUtils {
     public String getCurrentMethod(){return this.currentMethod;}
 
     public static String getCurrentClass(){ return
-        currentClass;}
+            currentClass;}
 
     private static final String INT_TYPE_NAME = "int";
 
@@ -52,12 +51,12 @@ public class TypeUtils {
             case VAR_REF_EXPR -> getVarExprType(expr, table);
             case INTEGER_LITERAL -> new Type(INT_TYPE_NAME, false);
             case IDENTIFIER, NEGATION -> new Type("boolean", false);
-            case PARENTESIS -> getExprType(expr.getChild(0), table);
-            case NEW_CLASS -> new Type(expr.get("value"), false);
+            case PARENTESIS, ARRAY_ACCESS -> getExprType(expr.getJmmChild(0), table);
+            case NEW_OBJECT -> new Type(expr.get("object"), false);
             case THIS -> new Type(table.getClassName(), false);
-            case METHOD_CALL -> getReturnType(expr, table);
+            case METHOD_CALL -> new Type(expr.get("value"), false);
             case ARRAY_DECLARATION -> new Type(INT_TYPE_NAME, true);
-            case ARRAY_ACCESS -> new Type(INT_TYPE_NAME, false);
+            //case FUNCTION_CALL ->  table.getReturnType(expr.get("value"));
             case ARRAY_LITERAL -> new Type(INT_TYPE_NAME, true);
             default ->
                     throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'.");
@@ -67,11 +66,8 @@ public class TypeUtils {
     }
 
     public static Boolean importedClass(String className, SymbolTable table) {
-        return table.getImports().stream()
-                .anyMatch(importDecl -> {
-                    String[] segments = importDecl.split("\\.");
-                    return segments[segments.length - 1].equals(className);
-                });
+        return table.getImports().stream().anyMatch(importDecl -> {String[] args = importDecl.split("\\.");
+            return args[args.length - 1].equals(className);});
     }
 
     private static Type getBinExprType(JmmNode binaryExpr) {
@@ -86,6 +82,10 @@ public class TypeUtils {
         };
     }
 
+
+
+
+
     private static Type getVarExprType(JmmNode varRefExpr, SymbolTable table) {
 
         String varName = varRefExpr.get("name");
@@ -97,14 +97,14 @@ public class TypeUtils {
         }
         if(symbol == null) {
             symbol = table.getParameters(methodNode.get("name")).stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
-        }
-        if(symbol == null){
-            return null;
+            return new Type("undefined", false);
         }
 
         return symbol.getType();
 
+
     }
+
 
     /**
      * @param sourceType
@@ -127,22 +127,5 @@ public class TypeUtils {
         return false;
     }
 
-    public static Type getReturnType(JmmNode methodCall, SymbolTable table) {
-        String methodName = methodCall.get("value");
-        JmmNode x = methodCall.getChild(0);
-        Type classType = getExprType(x, table);
-        if(classType==null){
-            return null;
-        }
-        if (Objects.equals(classType.getName(), "this") || Objects.equals(classType.getName(), table.getClassName())) {
-            return table.getReturnType(methodName);
-        } else {
-            if (!importedClass(classType.getName(), table)) {
-                return null;
-            }
-            return new Type("undefined", false);
-        }
-
-    }
 
 }
