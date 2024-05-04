@@ -1,12 +1,20 @@
-class ClassNotImported {
-
-    public static void main(String[] args) {
-
-    }
+<<<<<<< Updated upstream
+class Varargs {
 
     public int foo() {
         int a;
-        a = A.bar();
+        a = this.varargs(10, 20, 30);
         return a;
     }
+
+    public int varargs(int... a) {
+        return a[0];
+    }
+=======
+import ioPlus;
+class HelloWorld {
+	public static void main(String[] args) {
+		ioPlus.printHelloWorld();
+	}
+>>>>>>> Stashed changes
 }
