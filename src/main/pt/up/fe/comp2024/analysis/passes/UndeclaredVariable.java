@@ -434,7 +434,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null;
         }
 
-        if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray() && lhsType.equals("ID")){
+        if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
             return null;
         }
 

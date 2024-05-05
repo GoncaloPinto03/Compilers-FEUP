@@ -60,7 +60,7 @@ public class TypeUtils {
             case ARRAY_ACCESS -> new Type(INT_TYPE_NAME, false);
             case ARRAY_LITERAL -> new Type(INT_TYPE_NAME, true);
             default ->
-                    throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'.");
+                    new Type(kind.toString(), false);
         };
 
         //return type;

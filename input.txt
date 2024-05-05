@@ -1,14 +1,14 @@
-class AssignIntToBool {
+class Chocolate {
 
     public static void main(String[] args) {
 
     }
 
-    public boolean foo() {
-        boolean a;
+    public int foo() {
 
-        a = 10;
+        int[] a;
+        a=[1,2,3,4];
 
-        return a;
+        return 0;
     }
 }
