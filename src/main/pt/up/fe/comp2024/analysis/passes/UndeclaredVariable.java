@@ -49,6 +49,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit("Integer", this::dealWithType);
         addVisit("Id", this::dealWithType);
         addVisit("Identifier", this::dealWithType);
+        addVisit(Kind.CONDITION_STM, this::visitBooleanExpr);
 
     }
 
@@ -70,6 +71,22 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Void dealWithType(JmmNode node, SymbolTable table){
         node.put("type", node.getKind());
+        return null;
+    }
+
+
+    private Void visitBooleanExpr(JmmNode node, SymbolTable table){
+        JmmNode condition = node.getChild(0);
+        Type conditionType = TypeUtils.getExprType(condition, table);
+        if(!conditionType.getName().equals("boolean")){
+            String message = "Invalid";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
         return null;
     }
 

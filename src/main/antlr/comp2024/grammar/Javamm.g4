@@ -46,7 +46,7 @@ classDecl
     ;
 
 varDeclaration
-    : type ('main' | name=ID) ';'
+    : type name = (ID|'main'|'length') ';'
     ;
 
 returnStatement
