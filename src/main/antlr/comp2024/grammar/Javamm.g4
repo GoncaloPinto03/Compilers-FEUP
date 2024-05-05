@@ -42,7 +42,7 @@ importDeclaration
     ;
 
 classDecl
-    : 'class' name=ID ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY #ClassDeclaration
+    : 'class' name=(ID | 'main' | 'length')  ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY #ClassDeclaration
     ;
 
 varDeclaration
@@ -54,7 +54,7 @@ returnStatement
     ;
 
 methodDecl
-    : ('public')? (isStatic='static')? type name=(ID | 'main') LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* returnStatement RCURLY #MethodDeclaration
+    : ('public')? (isStatic='static')? type name=(ID | 'main' | 'length')  LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* returnStatement RCURLY #MethodDeclaration
     | ('public')? 'static'  type name='main' LPAREN mainParam aname=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY #MethodDeclaration
     ;
 
@@ -78,7 +78,7 @@ type locals [boolean isArray = false]
     | value='short'       #SHORT                 // short
     | value='long'        #LONG                      // Long
     | value='void'        #VOID                 // Void
-    | value=(ID | 'main')            #ID                      // Id
+    | value=(ID | 'main' | 'length')            #ID                      // Id
     | value = 'int' #INT
     ;
 
@@ -97,7 +97,7 @@ expression
     | 'new' 'int' LRECT expression RRECT #ArrayDeclaration
     | 'new' value=(ID | 'main' | 'length') LPAREN (expression (',' expression) *)? RPAREN  #NewClass
     | expression LRECT expression RRECT #arrayAccess
-    | expression '.' value=(ID | 'main') LPAREN (expression (',' expression)*)? RPAREN #MethodCall
+    | expression '.' value=(ID | 'main' | 'length')  LPAREN (expression (',' expression)*)? RPAREN #MethodCall
     | expression '.' 'length' #Length
     | 'this' #This
     | value = '!' expression #Negation
