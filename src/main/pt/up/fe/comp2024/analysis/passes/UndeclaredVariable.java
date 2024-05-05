@@ -42,6 +42,13 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.NEGATION, this::visitNegationExpr);
         addVisit(Kind.METHOD_CALL, this::visitMethodCall);
         addVisit(Kind.NEW_CLASS, this::visitNewClass);
+        addVisit("String", this::dealWithType);
+        addVisit("Double", this::dealWithType);
+        addVisit("Boolean", this::dealWithType);
+        addVisit("Int", this::dealWithType);
+        addVisit("Integer", this::dealWithType);
+        addVisit("Id", this::dealWithType);
+        addVisit("Identifier", this::dealWithType);
 
     }
 
@@ -58,6 +65,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     message, null)
             );
         }
+        return null;
+    }
+
+    private Void dealWithType(JmmNode node, SymbolTable table){
+        node.put("type", node.getKind());
         return null;
     }
 
