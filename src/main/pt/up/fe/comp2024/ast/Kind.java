@@ -18,7 +18,6 @@ public enum Kind {
 
     CONDITION_STM,
 
-    ID,
 
     PARENTESIS,
 

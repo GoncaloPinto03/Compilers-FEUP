@@ -434,11 +434,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null;
         }
 
-        if (lhsNode.getKind().equals("Id")) {
-            return null;
-        }
-
-        if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
+        if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray() && lhsType.equals("ID")){
             return null;
         }
 
