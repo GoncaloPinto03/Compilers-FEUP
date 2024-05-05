@@ -51,6 +51,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit("Identifier", this::dealWithType);
         addVisit(Kind.CONDITION_STM, this::visitBooleanExpr);
 
+
     }
 
 

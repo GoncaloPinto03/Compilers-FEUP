@@ -42,7 +42,7 @@ importDeclaration
     ;
 
 classDecl
-    : 'class' name=(ID | 'main') ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY #ClassDeclaration
+    : 'class' name=ID ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY #ClassDeclaration
     ;
 
 varDeclaration
@@ -59,7 +59,7 @@ methodDecl
     ;
 
 param:
-    type name=ID #ParamDeclaration
+    type name=(ID | 'main' | 'length') #ParamDeclaration
     ;
 
 mainParam:
