@@ -13,10 +13,7 @@ import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Checks if the type of the expression in a return statement is compatible with the method return type.
@@ -50,6 +47,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit("Id", this::dealWithType);
         addVisit("Identifier", this::dealWithType);
         addVisit(Kind.CONDITION_STM, this::visitBooleanExpr);
+        addVisit(Kind.THIS, this::visitThisExpr);
 
 
     }
@@ -141,6 +139,19 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }
 
+
+    private Void visitThisExpr (JmmNode node, SymbolTable table){
+        if(table.getClassName().equals("Static")){
+            String message = "Invalid use of this";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+        return null;
+    }
 
 
 
