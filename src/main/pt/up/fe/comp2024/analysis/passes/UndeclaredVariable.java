@@ -419,7 +419,26 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     message, null)
             );
         }
-        node.put("type", "int");
+
+        if (!leftType.getName().equals("int") || leftType.isArray()) {
+            String message =("The type of right operand of binary expression is not compatible with the operation.");
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+
+        if (!rightType.getName().equals("boolean") || rightType.isArray()) {
+            String message =("The type of right operand of binary expression is not compatible with the operation.");
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
         return null;
     }
 
