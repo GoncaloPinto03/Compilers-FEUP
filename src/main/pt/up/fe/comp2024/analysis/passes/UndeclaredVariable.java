@@ -141,15 +141,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitThisExpr (JmmNode node, SymbolTable table){
-        if(table.getClassName().equals("Static")){
-            String message = "Invalid use of this";
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(node),
-                    NodeUtils.getColumn(node),
-                    message, null)
-            );
-        }
+        node.put("type", table.getClassName());
         return null;
     }
 
