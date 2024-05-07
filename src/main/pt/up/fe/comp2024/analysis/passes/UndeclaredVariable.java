@@ -400,8 +400,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type rightType = TypeUtils.getExprType(rightExpr,table);
 
         // Check if the types are compatible for the binary operation
-        if (!leftType.getName().equals("int") || leftType.isArray()) {
-            String message =("The type of left operand of binary expression is not compatible with the operation.");
+        if (!leftType.getName().equals("int") ||!rightType.getName().equals("int") || leftType.isArray()) {
+            String message =("The type of operand of binary expression is not compatible with the operation.");
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        } else if (leftType.getName().equals("null") || rightType.getName().equals("null")){
+            return null;
+        } else if (leftType.getName().equals("int") && rightType.getName().equals("int") && !leftType.isArray() && !rightType.isArray() ) {
+            return null;
+        }
+        else{
+            String message =("The type of operand of binary expression is not compatible with the operation.");
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),
@@ -409,17 +422,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     message, null)
             );
         }
-
-        if (!rightType.getName().equals("int") || rightType.isArray()) {
-            String message =("The type of right operand of binary expression is not compatible with the operation.");
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(node),
-                    NodeUtils.getColumn(node),
-                    message, null)
-            );
-        }
-
 
         return null;
     }
