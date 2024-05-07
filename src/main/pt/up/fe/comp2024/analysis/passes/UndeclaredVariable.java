@@ -326,13 +326,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitArrayAccess(JmmNode array, SymbolTable table) {
-        // Get the node representing the array and the node representing the index
         JmmNode arrayNode = array.getChildren().get(0);
-        JmmNode indexNode = array.getChildren().get(1);
+        JmmNode indexNode = array.getChildren().size() > 1 ? array.getChildren().get(1) : null;
 
-        // Retrieve the types of the array node and the index node
-        Type arrayType = TypeUtils.getExprType(arrayNode, table);
-        Type indexType = TypeUtils.getExprType(indexNode, table);
+        Type arrayType = arrayNode != null ? TypeUtils.getExprType(arrayNode, table) : null;
+        Type indexType = indexNode != null ? TypeUtils.getExprType(indexNode, table) : null;
 
         // Check if the array node is actually an array
         if (!arrayType.isArray()){
