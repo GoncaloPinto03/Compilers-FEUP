@@ -419,7 +419,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     message, null)
             );
         }
-
+        node.put("type", "int");
         return null;
     }
 
