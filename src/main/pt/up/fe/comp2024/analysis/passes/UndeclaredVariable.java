@@ -410,7 +410,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         } else if (leftType.getName().equals("null") || rightType.getName().equals("null")){
             return null;
-        } else if (!leftType.getName().equals("int") ||!rightType.getName().equals("int") || leftType.isArray() ) {
+        } else if (leftType.getName().equals("int") && rightType.getName().equals("int") && !leftType.isArray() && !rightType.isArray() ) {
             return null;
         }
         else{

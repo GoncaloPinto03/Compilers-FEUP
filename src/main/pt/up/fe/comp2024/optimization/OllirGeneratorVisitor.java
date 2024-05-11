@@ -8,6 +8,8 @@ import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
+import java.util.List;
+
 import static pt.up.fe.comp2024.ast.Kind.*;
 
 /**
@@ -49,15 +51,20 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitImportDecl(JmmNode node, Void unused) {
-
         StringBuilder code = new StringBuilder();
+        String nodeId = node.get("ID").trim();  // Trim any whitespace
 
-        code.append("import ");
-        code.append(node.get("ID"));
-        code.append(END_STMT);
+        if (nodeId.matches("[a-zA-Z0-9\\.]+")) {  // Simple regex to validate basic import paths
+            code.append("import ");
+            code.append(nodeId);
+            code.append(END_STMT);
+        } else {
+            // Handle invalid import identifiers, perhaps log an error or throw an exception
+            System.err.println("Invalid import ID: " + nodeId);
+            return "";  // Return an empty string or handle it as you see fit
+        }
 
         return code.toString();
-
     }
 
     private String visitVarDecl(JmmNode node, Void unused) {
@@ -75,7 +82,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         return code.toString();
     }
-
     private String visitAssignStmt(JmmNode node, Void unused) {
 
         var lhs = exprVisitor.visit(node.getJmmChild(0));
