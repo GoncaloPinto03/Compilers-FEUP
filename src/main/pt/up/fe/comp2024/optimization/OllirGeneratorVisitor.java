@@ -53,10 +53,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         StringBuilder code = new StringBuilder();
 
         code.append("import ");
-        code.append(node.get("ID"));
-        code.append(END_STMT);
-
-        return code.toString();
+        for (var importID : table.getImports()) {
+            if (importID.contains(node.get("ID"))) {
+                code.append(importID);
+            }
+        }
+        return code + ";\n";
 
     }
 
