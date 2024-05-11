@@ -357,7 +357,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                     "}");
             return code.toString();
         }
-
+        code.append(NL);
         code.append(table.getClassName());
 
         var attributes = node.getAttributes();
