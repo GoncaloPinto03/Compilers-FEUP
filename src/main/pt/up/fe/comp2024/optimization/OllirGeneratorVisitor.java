@@ -296,6 +296,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitClass(JmmNode node, Void unused) {
 
         StringBuilder code = new StringBuilder();
+        code.append(NL);
 
         if (node.get("name").equals("Simple")) {
             code = new StringBuilder(
