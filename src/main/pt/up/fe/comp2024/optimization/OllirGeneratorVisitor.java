@@ -52,19 +52,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
     private String visitImportDecl(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
-        String nodeId = node.get("ID").trim();  // Trim any whitespace
+        String importList = node.get("importValue");
+        String importStr = importList.substring(1, importList.length() - 1);
+        String formatado = String.join(".", importStr.split(", "));
 
-        if (nodeId.matches("[a-zA-Z0-9\\.]+")) {  // Simple regex to validate basic import paths
-            code.append("import ");
-            code.append(nodeId);
-            code.append(END_STMT);
-        } else {
-            // Handle invalid import identifiers, perhaps log an error or throw an exception
-            System.err.println("Invalid import ID: " + nodeId);
-            return "";  // Return an empty string or handle it as you see fit
-        }
-
-        return code.toString();
+        return code.append("import ").append(formatado).append(END_STMT).toString();
     }
 
     private String visitVarDecl(JmmNode node, Void unused) {
