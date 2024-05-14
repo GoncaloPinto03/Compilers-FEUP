@@ -509,14 +509,24 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
     private Void visitMethodCall (JmmNode method, SymbolTable table){
 
-        if(table.getMethods().contains(method.get("value")) || table.getImports().contains(method.get("value"))){
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(method),
-                    NodeUtils.getColumn(method),
-                    "Method not declared",
-                    null)
-            );
+        if (method.getChild(0).getKind().equals("This")) {
+            return null;
+        }
+
+        var test = TypeUtils.getExprType(method.getChild(0), table);
+
+        if(table.getMethods().contains(method.get("value")) || table.getImports().contains(method.get("value"))) {
+            if (!table.getImports().contains(test.getName())) {
+                if (!table.getClassName().equals(test.getName())) {
+                    addReport(Report.newError(
+                            Stage.SEMANTIC,
+                            NodeUtils.getLine(method),
+                            NodeUtils.getColumn(method),
+                            "Method not declared",
+                            null)
+                    );
+                }
+            }
         }
 
         if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){

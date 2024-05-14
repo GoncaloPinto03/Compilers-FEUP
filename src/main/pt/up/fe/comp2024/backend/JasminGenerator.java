@@ -116,17 +116,6 @@ public class JasminGenerator {
         if (!hasExplicitConstructors) {
             code.append(";default constructor");
         }
-        // generate a single constructor method
-        var defaultConstructor = """
-                .method public <init>()V
-                    aload_0
-                    invokespecial""" + " " + superclass + """
-                /<init>()V
-                    return
-                .end method
-                """;
-        code.append(defaultConstructor);
-
 
         // generate code for all other methods
         for (var method : ollirResult.getOllirClass().getMethods()) {
@@ -140,6 +129,17 @@ public class JasminGenerator {
 
             code.append(generators.apply(method));
         }
+
+        // generate a single constructor method
+        var defaultConstructor = """
+                .method public <init>()V
+                    aload_0
+                    invokespecial""" + " " + superclass + """
+                /<init>()V
+                    return
+                .end method
+                """;
+        code.append(defaultConstructor);
 
         return code.toString();
     }
