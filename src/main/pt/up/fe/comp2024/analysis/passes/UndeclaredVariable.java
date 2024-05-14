@@ -529,6 +529,18 @@ public class UndeclaredVariable extends AnalysisVisitor {
             }
         }
 
+        /*
+        if (table.getMethods().contains(test.getName())) {
+            for (var param : method.getChildren()) {
+                var paramType = TypeUtils.getExprType(param, table);
+                var mathodType = TypeUtils.getExprType(method, table);
+                if (TypeUtils.getExprType(param, table) != TypeUtils.getExprType(method, table)) {
+                    return null;
+                }
+            }
+        }
+         */
+
         if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){
 
             if (method.getNumChildren() > 0) {
