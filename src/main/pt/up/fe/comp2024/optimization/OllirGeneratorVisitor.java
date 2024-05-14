@@ -237,6 +237,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 var childCode = visitMethodCall(child.getJmmChild(0), null);
                 code.append(childCode);
             }
+            if(child.getKind().equals("NewClass")) {
+                var childCode = visitMethodCall(child.getJmmChild(0), null);
+                code.append(childCode);
+            }
         }
 
         if (node.get("name").equals("main")) {
@@ -433,7 +437,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String buildConstructor() {
 
         return ".construct " + table.getClassName() + "().V {\n" +
-                "invokespecial(this, \"\").V;\n" +
+                "invokespecial(this, \"<init>\").V;\n" +
                 "}\n";
     }
 

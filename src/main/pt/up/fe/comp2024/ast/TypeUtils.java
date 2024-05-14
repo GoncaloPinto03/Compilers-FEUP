@@ -92,11 +92,11 @@ public class TypeUtils {
 
         var methodNode = varRefExpr.getAncestor(Kind.METHOD_DECLARATION).get();
         var symbol = table.getLocalVariables(methodNode.get("name")).stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
-        if(symbol == null){
-            symbol = table.getFields().stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
-        }
         if(symbol == null) {
             symbol = table.getParameters(methodNode.get("name")).stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
+        }
+        if(symbol == null){
+            symbol = table.getFields().stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
         }
         if(symbol == null){
             return null;
