@@ -251,7 +251,7 @@ public class JasminGenerator {
         String loadType = "";
         switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> loadType = "iload " + reg + NL;
-            case STRING -> loadType = "aload " + reg + NL;
+            case STRING, OBJECTREF -> loadType = "aload " + reg + NL;
             case THIS -> loadType = "aload_0 " + NL;
         }
         return loadType;
@@ -325,6 +325,8 @@ public class JasminGenerator {
 
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
+        var first = callInstruction.getOperands().get(0);
+        code.append(generators.apply(first));
 
         var className = ollirResult.getOllirClass().getClassName();
         code.append("invokespecial ").append(className).append("/<init>");
@@ -339,7 +341,6 @@ public class JasminGenerator {
         code.append(")");
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
-
         decideReturnTypeForInvokeOrPutGetField(code, returnType);
 
         return code.append("\n").toString();
@@ -348,8 +349,16 @@ public class JasminGenerator {
     private String invokeVirtual(CallInstruction callInstruction) {
         var code = new StringBuilder();
 
-        var callerClassName = callInstruction.getCaller().getClass().getName();
-        code.append("invokevirtual ").append(callerClassName).append("/");
+        var first = callInstruction.getOperands().get(0);
+
+        code.append(generators.apply(first));
+
+        for (Element op : callInstruction.getArguments()) {
+            code.append(generateOperand((Operand) op));
+        }
+
+        var callerClassName = (ClassType) callInstruction.getCaller().getType();
+        code.append("invokevirtual ").append(callerClassName.getName()).append("/");
 
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
         code.append(literal.getLiteral().replace("\"", ""));
