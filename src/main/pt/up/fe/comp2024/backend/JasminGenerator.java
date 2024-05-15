@@ -311,13 +311,11 @@ public class JasminGenerator {
         var code  = new StringBuilder();
         var operand = (Operand) callInstruction.getOperands().get(0);
 
-        var invocationType = callInstruction.getInvocationType();
-
-        switch (invocationType) {
-            case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
+        switch (callInstruction.getInvocationType()) {
             case invokespecial -> code.append(invokeSpecial(callInstruction));
             case invokevirtual -> code.append(invokeVirtual(callInstruction));
             case invokestatic -> code.append(invokeStatic(callInstruction));
+            case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
 
         return code.toString();
@@ -325,19 +323,14 @@ public class JasminGenerator {
 
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
-        var first = callInstruction.getOperands().get(0);
-        code.append(generators.apply(first));
-
-        var className = ollirResult.getOllirClass().getClassName();
-        code.append("invokespecial ").append(className).append("/<init>");
+        code.append(generators.apply(callInstruction.getOperands().get(0)));
+        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName()).append("/<init>");
 
         code.append("(");
-
         for (Element element : callInstruction.getArguments()) {
             var elementType = element.getType().getTypeOfElement();
             decideReturnTypeForInvokeOrPutGetField(code, elementType);
         }
-
         code.append(")");
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
@@ -348,28 +341,23 @@ public class JasminGenerator {
 
     private String invokeVirtual(CallInstruction callInstruction) {
         var code = new StringBuilder();
-
-        var first = callInstruction.getOperands().get(0);
-
-        code.append(generators.apply(first));
+        code.append(generators.apply(callInstruction.getOperands().get(0)));
 
         for (Element op : callInstruction.getArguments()) {
             code.append(generateOperand((Operand) op));
         }
 
         var callerClassName = (ClassType) callInstruction.getCaller().getType();
-        code.append("invokevirtual ").append(callerClassName.getName()).append("/");
-
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
+
+        code.append("invokevirtual " + callerClassName.getName() + "/");
         code.append(literal.getLiteral().replace("\"", ""));
 
         code.append("(");
-
         for (Element element : callInstruction.getArguments()) {
             var elementType = element.getType().getTypeOfElement();
             decideReturnTypeForInvokeOrPutGetField(code, elementType);
         }
-
         code.append(")");
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
@@ -384,20 +372,17 @@ public class JasminGenerator {
             code.append(generators.apply(op));
         }
 
-        var callerOperand = (Operand) callInstruction.getOperands().get(0);
-        var callerName = callerOperand.getName();
+        var callerName = ((Operand) callInstruction.getOperands().get(0)).getName();
         code.append("invokestatic ").append(callerName).append("/");
 
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
         code.append(literal.getLiteral().replace("\"", ""));
 
         code.append("(");
-
         for (Element element : callInstruction.getArguments()) {
             var elementType = element.getType().getTypeOfElement();
             decideReturnTypeForInvokeOrPutGetField(code, elementType);
         }
-
         code.append(")");
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
@@ -410,34 +395,26 @@ public class JasminGenerator {
     private String generatePutField(PutFieldInstruction putFieldInstruction) {
         var code = new StringBuilder();
 
-        var firstOperand = putFieldInstruction.getOperands().get(0);
-        var callerType = (ClassType) firstOperand.getType();
+        var callerType = (ClassType) putFieldInstruction.getOperands().get(0).getType();
         var field = (Operand) putFieldInstruction.getOperands().get(1);
-        var fieldType = field.getType().getTypeOfElement();
-        var fieldName = field.getName();
-        var thirdOperand = putFieldInstruction.getOperands().get(2);
 
-        code.append(generators.apply(firstOperand)).append(generators.apply(thirdOperand));
-        code.append("putfield ").append(callerType.getName()).append("/").append(fieldName).append(" ");
+        code.append(generators.apply(putFieldInstruction.getOperands().get(0))).append(generators.apply(putFieldInstruction.getOperands().get(2)));
+        code.append("putfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
 
-        decideReturnTypeForInvokeOrPutGetField(code, fieldType);
+        decideReturnTypeForInvokeOrPutGetField(code, field.getType().getTypeOfElement());
         return code.toString();
     }
 
     private String generateGetField(GetFieldInstruction getFieldInstruction) {
         var code = new StringBuilder();
 
-        var firstOperand = getFieldInstruction.getOperands().get(0);
-        var callerType = (ClassType) firstOperand.getType();
+        var callerType = (ClassType) getFieldInstruction.getOperands().get(0).getType();
         var field = (Operand) getFieldInstruction.getOperands().get(1);
-        var fieldType = field.getType().getTypeOfElement();
-        var fieldName = field.getName();
 
-        code.append(generators.apply(firstOperand));
-        code.append("getfield ").append(callerType.getName()).append("/").append(fieldName).append(" ");
+        code.append(generators.apply(getFieldInstruction.getOperands().get(0)));
+        code.append("getfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
 
-        decideReturnTypeForInvokeOrPutGetField(code, fieldType);
-
+        decideReturnTypeForInvokeOrPutGetField(code, field.getType().getTypeOfElement());
         return code.append("\n").toString();
     }
 
