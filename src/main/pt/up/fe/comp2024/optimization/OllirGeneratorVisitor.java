@@ -233,7 +233,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 code.append(childCode);
             }
             if (child.getKind().equals("ExprStmt")) {
-                exprVisitor.visit(child);
+                var x = exprVisitor.visit(child.getJmmChild(0));
+                code.append(x.getCode());
             }
             if(child.getKind().equals("NewClass")) {
                 exprVisitor.visit(child);
