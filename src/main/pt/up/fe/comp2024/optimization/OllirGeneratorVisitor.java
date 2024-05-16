@@ -41,12 +41,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(PROGRAM_DECLARATION, this::visitProgram);
         addVisit(IMPORT_DECL, this::visitImportDecl);
         addVisit(CLASS_DECLARATION, this::visitClass);
-        addVisit(METHOD_DECLARATION, this::visitMethodDecl);
         addVisit(PARAM_DECLARATION, this::visitParam);
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(VAR_DECLARATION, this::visitVarDecl);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
-        addVisit(METHOD_CALL, this::visitMethodCall);
+        addVisit(METHOD_DECLARATION, this::visitMethodDecl);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -234,12 +233,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 code.append(childCode);
             }
             if (child.getKind().equals("ExprStmt")) {
-                var childCode = visitMethodCall(child.getJmmChild(0), null);
-                code.append(childCode);
+                exprVisitor.visit(child);
             }
             if(child.getKind().equals("NewClass")) {
-                var childCode = visitMethodCall(child.getJmmChild(0), null);
-                code.append(childCode);
+                exprVisitor.visit(child);
             }
         }
 
@@ -254,114 +251,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
-    private String visitMethodCall(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-
-        String functionName = node.get("value");
-
-        if (node.getJmmChild(0).getAttributes().contains("name")) {
-            if (checkIfImport(node.getJmmChild(0).get("name"))) {
-                code.append("invokestatic(");
-                code.append(node.getJmmChild(0).get("name"));
-            }
-        } else {
-
-            code.append("invokevirtual(");
-            if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
-                code.append(node.getJmmChild(0).get("name")).append(".");
-                code.append(table.getClassName());
-            } else {
-                code.append(node.getJmmChild(0).get("value")).append(".");
-                code.append(table.getClassName());
-            }
-        }
-
-        code.append(", \"");
-        code.append(functionName);
-        code.append("\"");
-
-        for (int i = 1; i < node.getNumChildren(); i++) {
-            code.append(", ");
-            code.append(exprVisitor.visit(node.getJmmChild(1)).getCode());
-        }
-
-        if (checkIfImport(node.getJmmChild(0).get("name"))) {
-            code.append(").V");
-        } else {
-            code.append(").i32");
-        }
-
-        code.append(END_STMT);
-
-        return code.toString();
-
-    }
-
     private String visitClass(JmmNode node, Void unused) {
 
         StringBuilder code = new StringBuilder();
-        code.append(NL);
-
-        if (node.get("name").equals("Simple")) {
-            code = new StringBuilder(
-                    "Simple {\n" +
-                    "\n" +
-                    "    .method public add(a.i32, b.i32).i32 {\n" +
-                    "\n" +
-                    "        t1.i32 :=.i32 invokevirtual(this.Simple, \"constInstr\").i32;\n" +
-                    "        c.i32 :=.i32 $1.a.i32 +.i32 t1.i32;\n" +
-                    "\n" +
-                    "        ret.i32 c.i32;\n" +
-                    "\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    .method public static main(args.array.String).V {\n" +
-                    "\n" +
-                    "        a.i32 :=.i32 20.i32;\n" +
-                    "\n" +
-                    "        b.i32 :=.i32 10.i32;\n" +
-                    "\n" +
-                    "        s.Simple :=.Simple new(Simple).Simple;\n" +
-                    "        invokespecial(s.Simple, \"<init>\").V;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 invokevirtual(s.Simple, \"add\", a.i32, b.i32).i32;\n" +
-                    "\n" +
-                    "        invokestatic(io, \"println\", c.i32).V;\n" +
-                    "\n" +
-                    "        ret.V;\n" +
-                    "\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    .method public constInstr().i32 {\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 0.i32;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 4.i32;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 8.i32;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 14.i32;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 250.i32;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 400.i32;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 1000.i32;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 100474650.i32;\n" +
-                    "\n" +
-                    "        c.i32 :=.i32 10.i32;\n" +
-                    "\n" +
-                    "        ret.i32 c.i32;\n" +
-                    "\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    .construct Simple().V {\n" +
-                    "        invokespecial(this, \"<init>\").V;\n" +
-                    "    }\n" +
-                    "}");
-            return code.toString();
-        }
         code.append(NL);
         code.append(table.getClassName());
 
