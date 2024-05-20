@@ -30,7 +30,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
         addVisit(Kind.BINARY_EXPR, this::visitBinaryExpr);
-        addVisit(Kind.CONDITION_STM, this::visitConditionStm);
         addVisit(Kind.NEGATION, this::visitNegation);
         addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
         addVisit(Kind.LENGTH, this::visitLength);
@@ -48,6 +47,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit("Identifier", this::dealWithType);
         addVisit(Kind.CONDITION_STM, this::visitBooleanExpr);
         addVisit(Kind.THIS, this::visitThisExpr);
+        addVisit("IfStm", this::visitIfStm);
+        addVisit("WhileStm", this::visitWhileStm);
 
 
     }
@@ -137,6 +138,24 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         }
         return null;
+    }
+
+    private Void visitIfStm(JmmNode node, SymbolTable table) {
+        JmmNode expr = node.getChild(0);
+        JmmNode stmt = node.getChild(1);
+
+        Type exprType = TypeUtils.getExprType(expr, table);
+        if(exprType.isArray() || !exprType.getName().equals("boolean")){
+            String message = "Invalid if statement";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+        return null;
+
     }
 
 
@@ -364,11 +383,14 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
-    private Void visitConditionStm (JmmNode node, SymbolTable table){
-        JmmNode condition = node.getChild(0);
-        Type conditionType = TypeUtils.getExprType(condition, table);
-        if(!conditionType.getName().equals("boolean")){
-            String message = "Invalid";
+    private Void visitWhileStm (JmmNode node, SymbolTable table){
+        JmmNode expr = node.getChild(0);
+        JmmNode stmt = node.getChild(1);
+
+        Type exprType = TypeUtils.getExprType(expr, table);
+
+        if(exprType.isArray() || !exprType.getName().equals("boolean")){
+            String message = "Invalid while statement";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),

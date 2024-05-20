@@ -35,6 +35,10 @@ public enum Kind {
 
     THIS,
 
+    FOR_STMT,
+    IFSTM,
+    WHILESTM,
+
     ARRAY_DECLARATION,
     TYPE,
     METHOD_DECL,
