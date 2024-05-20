@@ -318,12 +318,38 @@ public class JasminGenerator {
             case invokeinterface -> code.append(invokeInterface(callInstruction));
             case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
+
         // handle special case of VOID
         if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
-            code.append("pop").append(NL);
-
+            // Only pop if the result is not used by a subsequent instruction
+            if (!usesResultOf(callInstruction)) {
+                code.append("pop").append(NL);
+            }
         return code.toString();
     }
+
+    private boolean usesResultOf(Instruction inst) {
+        if (currentMethod == null) {
+            return false;
+        }
+
+        List<Instruction> instructions = currentMethod.getInstructions();
+        int index = instructions.indexOf(inst);
+
+        if (index == -1 || index == instructions.size() - 1) {
+            return false;
+        }
+
+        for (int i = index + 1; i < instructions.size(); i++) {
+            Instruction nextInst = instructions.get(i);
+            if (nextInst.getInstType().equals(InstructionType.ASSIGN)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
