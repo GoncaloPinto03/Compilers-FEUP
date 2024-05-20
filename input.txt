@@ -1,5 +1,4 @@
 import io;
-<<<<<<< HEAD
 class Simple {
 
     public int add(int a, int b){
@@ -36,15 +35,3 @@ class Simple {
 
 
 }
-=======
-
-class CompileMethodInvocation {
-
-    public int foo() {
-
-        io.println(a);
-
-        return 0;
-    }
-}
->>>>>>> master

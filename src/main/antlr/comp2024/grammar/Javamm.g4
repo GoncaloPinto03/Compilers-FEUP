@@ -42,11 +42,11 @@ importDeclaration
     ;
 
 classDecl
-    : 'class' name=ID ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY #ClassDeclaration
+    : 'class' name=(ID | 'main' | 'length')  ( 'extends' sname=ID )? LCURLY ( varDeclaration )* ( methodDecl )* RCURLY #ClassDeclaration
     ;
 
 varDeclaration
-    : type ('main' | name=ID) ';'
+    : type name = (ID|'main'|'length') ';'
     ;
 
 returnStatement
@@ -54,12 +54,12 @@ returnStatement
     ;
 
 methodDecl
-    : ('public')? (isStatic='static')? type name=ID LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* returnStatement RCURLY #MethodDeclaration
+    : ('public')? (isStatic='static')? type name=(ID | 'main' | 'length')  LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* returnStatement RCURLY #MethodDeclaration
     | ('public')? 'static'  type name='main' LPAREN mainParam aname=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY #MethodDeclaration
     ;
 
 param:
-    type name=ID #ParamDeclaration
+    type name=(ID | 'main' | 'length') #ParamDeclaration
     ;
 
 mainParam:
@@ -67,50 +67,49 @@ mainParam:
     ;
 
 type locals [boolean isArray = false]
-    : value='int' ('['{$isArray = true;}']')?   // variable number of integers
-    | value='int' ('...')?
-    | value='boolean'                           // Boolean
-    | value='double'                            // Double
-    | value='float'                             // Float
-    | value='String'                            // string
-    | value='char'                              // char
-    | value='byte'                              // byte
-    | value='short'                             // short
-    | value='long'                              // Long
-    | value='void'                              // Void
-    | value=ID                                  // Id
+    : value='int' ('['{$isArray = true;}']')? #VARIABLE_INT   // variable number of integers
+    | value='int' '...'{$isArray=true;} #VARARG //??
+    | value='boolean'      #BOOL                        // Boolean
+    | value='double'       #DOUBLE                     // Double
+    | value='float'        #FLOAT             // Float
+    | value='String'      #STRING                      // string
+    | value='char'        #CHAR               // char
+    | value='byte'        #BYTE                 // byte
+    | value='short'       #SHORT                 // short
+    | value='long'        #LONG                      // Long
+    | value='void'        #VOID                 // Void
+    | value=(ID | 'main' | 'length')            #ID                      // Id
+    | value = 'int' #INT
     ;
 
 statement
-    : LCURLY ( statement )* RCURLY
-    | 'if' LPAREN expression RPAREN statement 'else' statement
-    | 'while' LPAREN expression RPAREN statement
-    | 'for' '(' statement expression ';' expression ')' statement
-    | expression ';'
-    | var=ID '=' expression ';'
-    | var=ID LRECT expression RRECT '=' expression ';'
-    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN ';'  // Method invocation as a statement
+    : LCURLY ( statement )* RCURLY  #BRACKETS
+    | 'if' LPAREN expression RPAREN statement 'else' statement #ConditionStm
+    | 'while' LPAREN expression RPAREN statement #ConditionStm
+    | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
+    | expression ';' #exprStmt
+    | expression '=' expression ';' #assignStmt
+    | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
     ;
 
 expression
     : LPAREN expression RPAREN  #Parentesis
     | 'new' 'int' LRECT expression RRECT #ArrayDeclaration
-    | 'new' classname=ID LPAREN (expression (',' expression) *)? RPAREN  #NewClass
+    | 'new' value=(ID | 'main' | 'length') LPAREN (expression (',' expression) *)? RPAREN  #NewClass
     | expression LRECT expression RRECT #arrayAccess
-    | expression '.' value=ID LPAREN (expression (',' expression)*)? RPAREN #FunctionCall
+    | expression '.' value=(ID | 'main' | 'length')  LPAREN (expression (',' expression)*)? RPAREN #MethodCall
     | expression '.' 'length' #Length
-    | value = 'this' #Object
+    | 'this' #This
     | value = '!' expression #Negation
-    | expression op=('*' | '/') expression #binaryExpr
-    | expression op=('+' | '-') expression #binaryExpr
-    | expression op=('<' | '>') expression #binaryExpr
-    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #binaryExpr
-    | expression op=('&&' | '||') expression #binaryExpr
-    | className=ID expression # Constructor
+    | expression op=('*' | '/') expression #BinaryExpr
+    | expression op=('+' | '-') expression #BinaryExpr
+    | expression op=('<' | '>') expression #BinaryExpr
+    | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #BinaryExpr
+    | expression op=('&&' | '||') expression #BinaryExpr
     | LRECT ( expression ( ',' expression )* )? RRECT # ArrayLiteral
-    | value=INT #IntegerLiberal
+    | value=INT #IntegerLiteral
     | value='true' #Identifier
     | value='false' #Identifier
     | value=ID op=('++' | '--') #Increment
-    | name = ID #VarRefExpr
+    | name = (ID | 'main' | 'length') #VarRefExpr
     ;

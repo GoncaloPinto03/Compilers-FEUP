@@ -20,7 +20,7 @@ public class JmmAnalysisImpl implements JmmAnalysis {
 
     public JmmAnalysisImpl() {
 
-        this.analysisPasses = List.of();
+        this.analysisPasses = List.of(new UndeclaredVariable());
 
     }
 
@@ -35,9 +35,13 @@ public class JmmAnalysisImpl implements JmmAnalysis {
 
         // Visit all nodes in the AST
         for (var analysisPass : analysisPasses) {
+
             try {
                 var passReports = analysisPass.analyze(rootNode, table);
-                reports.addAll(passReports);
+                if(!passReports.isEmpty()) {
+                    reports.addAll(passReports);
+                    break;
+                }
             } catch (Exception e) {
                 reports.add(Report.newError(Stage.SEMANTIC,
                         -1,
@@ -45,9 +49,11 @@ public class JmmAnalysisImpl implements JmmAnalysis {
                         "Problem while executing analysis pass '" + analysisPass.getClass() + "'",
                         e)
                 );
+                break;
             }
 
         }
+        System.out.println(reports);
 
         return new JmmSemanticsResult(parserResult, table, reports);
     }

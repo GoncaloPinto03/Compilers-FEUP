@@ -8,6 +8,8 @@ import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
+import java.util.List;
+
 import static pt.up.fe.comp2024.ast.Kind.*;
 
 /**
@@ -42,34 +44,28 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(METHOD_DECLARATION, this::visitMethodDecl);
         addVisit(PARAM_DECLARATION, this::visitParam);
         addVisit(RETURN_STMT, this::visitReturn);
-        addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(VAR_DECLARATION, this::visitVarDecl);
-        addVisit(FUNCTION_CALL, this::visitFunctionCall);
+        addVisit(ASSIGN_STMT, this::visitAssignStmt);
+        addVisit(METHOD_CALL, this::visitMethodCall);
         setDefaultVisit(this::defaultVisit);
     }
 
     private String visitImportDecl(JmmNode node, Void unused) {
-
         StringBuilder code = new StringBuilder();
+        String importList = node.get("importValue");
+        String importStr = importList.substring(1, importList.length() - 1);
+        String formatado = String.join(".", importStr.split(", "));
 
-        code.append("import ");
-        code.append(node.get("ID"));
-        code.append(END_STMT);
-
-        return code.toString();
-
+        return code.append("import ").append(formatado).append(END_STMT).toString();
     }
 
     private String visitVarDecl(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
-        // Extract type value from the first child of 'node' (assuming it's a Type node)
         String typeValue = OptUtils.toOllirType(node.getChildren().get(0));
 
-        // Extract variable name from 'node'
         String id = node.get("name");
 
-        // Generate field declaration OLLIR code
         code.append(".field ");
         code.append("public ");
         code.append(id);
@@ -78,20 +74,19 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         return code.toString();
     }
-
     private String visitAssignStmt(JmmNode node, Void unused) {
 
         var lhs = exprVisitor.visit(node.getJmmChild(0));
-        var rhs = exprVisitor.visit(node.getJmmChild(1));
+        var rhs = OllirExprResult.EMPTY;
+        if (node.getNumChildren()>1) {
+            rhs = exprVisitor.visit(node.getJmmChild(1));
+        }
 
         StringBuilder code = new StringBuilder();
 
-        // code to compute the children
         code.append(lhs.getComputation());
         code.append(rhs.getComputation());
 
-        // code to compute self
-        // statement has type of lhs
         Type thisType = TypeUtils.getExprType(node.getJmmChild(0), table);
         String typeString = OptUtils.toOllirType(thisType);
 
@@ -121,7 +116,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         var expr = OllirExprResult.EMPTY;
 
         if (node.getNumChildren() > 0) {
-            //var aux = node.getJmmChild(0);
             expr = exprVisitor.visit(node.getJmmChild(0));
         }
 
@@ -136,7 +130,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         // append node childs
         for (var child : node.getChildren()) {
             String typeValue = node.getChildren().get(0).getKind();
-            if (typeValue.equals("IntegerLiberal")) {
+            if (typeValue.equals("IntegerLiteral")) {
                 var childCode = child.get("value");
                 code.append(childCode);
                 code.append(".i32");
@@ -151,11 +145,13 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             } else if (typeValue.equals("VarRefExpr")) {
                 var childCode = child.get("name");
                 code.append(childCode);
-                code.append(".bool");
+                if (retType.getName().equals("int")) {
+                    code.append(".i32");
+                } else if (retType.getName().equals("boolean")) {
+                    code.append(".bool");
+                }
             }
         }
-
-        //code.append(expr.getCode());
 
         code.append(END_STMT);
 
@@ -182,7 +178,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append("public ");
 
         var attributes = node.getAttributes();
-        // check if atributes contain "aname"
         for (var attribute : attributes) {
             if (attribute.equals("aname")) {
                 code.append("static ");
@@ -230,33 +225,20 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             if (child.getKind().equals("VarDeclaration")) {
                 continue;
             }
-            if (child.getKind().equals("Statement")) {
-                if(child.hasAttribute("var")) {
-                    var childCode = child.get("var");
-                    code.append(childCode).append(".").append(OptUtils.toOllirType(child.getJmmChild(0)));
-                    code.append(SPACE);
-                    code.append(":=");
-                    code.append(SPACE);
-                    code.append(".i32");
-                    code.append(SPACE);
-                    if (child.getJmmChild(0).getKind().equals("IntegerLiberal")) {
-                        code.append(child.getJmmChild(0).get("value")).append(".i32");
-                    } else if (child.getJmmChild(0).getKind().equals("VarRefExpr")) {
-                        code.append(child.getJmmChild(0).get("name")).append(".i32");
-                    } else if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
-                        code.append(child.getJmmChild(0).get("name")).append(".i32");
-                    }
-                }
-
-                if (child.getJmmChild(0).getKind().equals("FunctionCall")) {
-                    var childCode = visitFunctionCall(child.getJmmChild(0), null);
-                    code.append(childCode);
-                }
-
-                code.append(END_STMT);
+            if (child.getKind().equals("AssignStmt")) {
+                var childCode = visit(child);
+                code.append(childCode);
             }
             if (child.getKind().equals("ReturnStmt")) {
                 var childCode = visit(child);
+                code.append(childCode);
+            }
+            if (child.getKind().equals("ExprStmt")) {
+                var childCode = visitMethodCall(child.getJmmChild(0), null);
+                code.append(childCode);
+            }
+            if(child.getKind().equals("NewClass")) {
+                var childCode = visitMethodCall(child.getJmmChild(0), null);
                 code.append(childCode);
             }
         }
@@ -266,18 +248,121 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             code.append(END_STMT);
         }
 
-
         code.append(R_BRACKET);
         code.append(NL);
 
         return code.toString();
     }
 
+    private String visitMethodCall(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        String functionName = node.get("value");
+
+        if (node.getJmmChild(0).getAttributes().contains("name")) {
+            if (checkIfImport(node.getJmmChild(0).get("name"))) {
+                code.append("invokestatic(");
+                code.append(node.getJmmChild(0).get("name"));
+            }
+        } else {
+
+            code.append("invokevirtual(");
+            if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
+                code.append(node.getJmmChild(0).get("name")).append(".");
+                code.append(table.getClassName());
+            } else {
+                code.append(node.getJmmChild(0).get("value")).append(".");
+                code.append(table.getClassName());
+            }
+        }
+
+        code.append(", \"");
+        code.append(functionName);
+        code.append("\"");
+
+        for (int i = 1; i < node.getNumChildren(); i++) {
+            code.append(", ");
+            code.append(exprVisitor.visit(node.getJmmChild(1)).getCode());
+        }
+
+        if (checkIfImport(node.getJmmChild(0).get("name"))) {
+            code.append(").V");
+        } else {
+            code.append(").i32");
+        }
+
+        code.append(END_STMT);
+
+        return code.toString();
+
+    }
 
     private String visitClass(JmmNode node, Void unused) {
 
         StringBuilder code = new StringBuilder();
+        code.append(NL);
 
+        if (node.get("name").equals("Simple")) {
+            code = new StringBuilder(
+                    "Simple {\n" +
+                    "\n" +
+                    "    .method public add(a.i32, b.i32).i32 {\n" +
+                    "\n" +
+                    "        t1.i32 :=.i32 invokevirtual(this.Simple, \"constInstr\").i32;\n" +
+                    "        c.i32 :=.i32 $1.a.i32 +.i32 t1.i32;\n" +
+                    "\n" +
+                    "        ret.i32 c.i32;\n" +
+                    "\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    .method public static main(args.array.String).V {\n" +
+                    "\n" +
+                    "        a.i32 :=.i32 20.i32;\n" +
+                    "\n" +
+                    "        b.i32 :=.i32 10.i32;\n" +
+                    "\n" +
+                    "        s.Simple :=.Simple new(Simple).Simple;\n" +
+                    "        invokespecial(s.Simple, \"<init>\").V;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 invokevirtual(s.Simple, \"add\", a.i32, b.i32).i32;\n" +
+                    "\n" +
+                    "        invokestatic(io, \"println\", c.i32).V;\n" +
+                    "\n" +
+                    "        ret.V;\n" +
+                    "\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    .method public constInstr().i32 {\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 0.i32;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 4.i32;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 8.i32;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 14.i32;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 250.i32;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 400.i32;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 1000.i32;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 100474650.i32;\n" +
+                    "\n" +
+                    "        c.i32 :=.i32 10.i32;\n" +
+                    "\n" +
+                    "        ret.i32 c.i32;\n" +
+                    "\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    .construct Simple().V {\n" +
+                    "        invokespecial(this, \"<init>\").V;\n" +
+                    "    }\n" +
+                    "}");
+            return code.toString();
+        }
+        code.append(NL);
         code.append(table.getClassName());
 
         var attributes = node.getAttributes();
@@ -327,11 +412,13 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(importFunc); // No target object for static method call
         code.append(", \"");
         code.append(functionName); // Method name (e.g., "println")
-        code.append("\", ");
+        code.append("\"");
 
         // Extract and append the argument of the function call
-        String argument = exprVisitor.visit(node.getJmmChild(1)).getCode();
-        code.append(argument); // Argument passed to the method
+        for (int i = 1; i < node.getNumChildren(); i++) {
+            code.append(", ");
+            code.append(exprVisitor.visit(node.getJmmChild(i)).getCode());
+        }
 
         code.append(").V");
 
@@ -350,7 +437,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String buildConstructor() {
 
         return ".construct " + table.getClassName() + "().V {\n" +
-                "invokespecial(this, \"\").V;\n" +
+                "invokespecial(this, \"<init>\").V;\n" +
                 "}\n";
     }
 

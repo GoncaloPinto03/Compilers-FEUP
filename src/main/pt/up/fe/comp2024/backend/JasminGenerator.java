@@ -77,9 +77,17 @@ public class JasminGenerator {
 
         // generate class name
         var className = ollirResult.getOllirClass().getClassName();
-        code.append(".class ").append(className).append(NL).append(NL);
+        var classType = switch (ollirResult.getOllirClass().getClassAccessModifier()) {
+            case PUBLIC, DEFAULT -> "public ";
+            case PRIVATE -> "private ";
+            case PROTECTED -> "protected ";
+        };
+        code.append(".class ").append(classType).append(className).append(NL).append(NL);
 
-        String superclass = classUnit.getSuperClass() != null ? classUnit.getSuperClass() : "java/lang/Object";
+        String superclass = ollirResult.getOllirClass().getSuperClass() != null ? ollirResult.getOllirClass().getSuperClass() : "java/lang/Object";
+
+        if (superclass.equals("Object"))
+            superclass = "java/lang/Object";
 
         code.append(".super ").append(superclass).append(NL);
 
@@ -101,17 +109,13 @@ public class JasminGenerator {
             code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldType).append(NL);
         }
 
-        // generate a single constructor method
-        var defaultConstructor = """
-                ;default constructor
-                .method public <init>()V
-                    aload_0
-                    invokespecial""" + " " + superclass + """
-                /<init>()V
-                    return
-                .end method
-                """;
-        code.append(defaultConstructor);
+
+
+        boolean hasExplicitConstructors = ollirResult.getOllirClass().getMethods().stream()
+                .anyMatch(Method::isConstructMethod);
+        if (!hasExplicitConstructors) {
+            code.append(";default constructor");
+        }
 
         // generate code for all other methods
         for (var method : ollirResult.getOllirClass().getMethods()) {
@@ -125,6 +129,17 @@ public class JasminGenerator {
 
             code.append(generators.apply(method));
         }
+
+        // generate a single constructor method
+        var defaultConstructor = """
+                .method public <init>()V
+                    aload_0
+                    invokespecial""" + " " + superclass + """
+                /<init>()V
+                    return
+                .end method
+                """;
+        code.append(defaultConstructor);
 
         return code.toString();
     }
@@ -236,7 +251,7 @@ public class JasminGenerator {
         String loadType = "";
         switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> loadType = "iload " + reg + NL;
-            case STRING -> loadType = "aload " + reg + NL;
+            case STRING, OBJECTREF -> loadType = "aload " + reg + NL;
             case THIS -> loadType = "aload_0 " + NL;
         }
         return loadType;
@@ -294,15 +309,13 @@ public class JasminGenerator {
 
     private String generateCall(CallInstruction callInstruction) {
         var code  = new StringBuilder();
-        var operand = (Operand) callInstruction.getOperands().getFirst();
+        var operand = (Operand) callInstruction.getOperands().get(0);
 
-        var invocationType = callInstruction.getInvocationType();
-
-        switch (invocationType) {
-            case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
+        switch (callInstruction.getInvocationType()) {
             case invokespecial -> code.append(invokeSpecial(callInstruction));
             case invokevirtual -> code.append(invokeVirtual(callInstruction));
             case invokestatic -> code.append(invokeStatic(callInstruction));
+            case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
 
         return code.toString();
@@ -310,21 +323,17 @@ public class JasminGenerator {
 
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
-
-        var className = ollirResult.getOllirClass().getClassName();
-        code.append("invokespecial ").append(className).append("/<init>");
+        code.append(generators.apply(callInstruction.getOperands().get(0)));
+        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName()).append("/<init>");
 
         code.append("(");
-
         for (Element element : callInstruction.getArguments()) {
             var elementType = element.getType().getTypeOfElement();
             decideReturnTypeForInvokeOrPutGetField(code, elementType);
         }
-
         code.append(")");
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
-
         decideReturnTypeForInvokeOrPutGetField(code, returnType);
 
         return code.append("\n").toString();
@@ -332,20 +341,23 @@ public class JasminGenerator {
 
     private String invokeVirtual(CallInstruction callInstruction) {
         var code = new StringBuilder();
+        code.append(generators.apply(callInstruction.getOperands().get(0)));
 
-        var callerClassName = callInstruction.getCaller().getClass().getName();
-        code.append("invokevirtual ").append(callerClassName).append("/");
+        for (Element op : callInstruction.getArguments()) {
+            code.append(generateOperand((Operand) op));
+        }
 
+        var callerClassName = (ClassType) callInstruction.getCaller().getType();
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
+
+        code.append("invokevirtual " + callerClassName.getName() + "/");
         code.append(literal.getLiteral().replace("\"", ""));
 
         code.append("(");
-
         for (Element element : callInstruction.getArguments()) {
             var elementType = element.getType().getTypeOfElement();
             decideReturnTypeForInvokeOrPutGetField(code, elementType);
         }
-
         code.append(")");
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
@@ -356,20 +368,21 @@ public class JasminGenerator {
 
     private String invokeStatic(CallInstruction callInstruction) {
         var code = new StringBuilder();
+        for (Element op : callInstruction.getArguments()) {
+            code.append(generators.apply(op));
+        }
 
-        var callerOperandName = callInstruction.getOperands().getFirst().getClass().getName();
-        code.append("invokestatic ").append(callerOperandName).append("/");
+        var callerName = ((Operand) callInstruction.getOperands().get(0)).getName();
+        code.append("invokestatic ").append(callerName).append("/");
 
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
         code.append(literal.getLiteral().replace("\"", ""));
 
         code.append("(");
-
         for (Element element : callInstruction.getArguments()) {
             var elementType = element.getType().getTypeOfElement();
             decideReturnTypeForInvokeOrPutGetField(code, elementType);
         }
-
         code.append(")");
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
@@ -382,34 +395,26 @@ public class JasminGenerator {
     private String generatePutField(PutFieldInstruction putFieldInstruction) {
         var code = new StringBuilder();
 
-        var firstOperand = putFieldInstruction.getOperands().getFirst();
-        var callerType = (ClassType) firstOperand.getType();
+        var callerType = (ClassType) putFieldInstruction.getOperands().get(0).getType();
         var field = (Operand) putFieldInstruction.getOperands().get(1);
-        var fieldType = field.getType().getTypeOfElement();
-        var fieldName = field.getName();
-        var thirdOperand = putFieldInstruction.getOperands().get(2);
 
-        code.append(generators.apply(firstOperand)).append(generators.apply(thirdOperand));
-        code.append("putfield ").append(callerType.getName()).append("/").append(fieldName).append(" ");
+        code.append(generators.apply(putFieldInstruction.getOperands().get(0))).append(generators.apply(putFieldInstruction.getOperands().get(2)));
+        code.append("putfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
 
-        decideReturnTypeForInvokeOrPutGetField(code, fieldType);
+        decideReturnTypeForInvokeOrPutGetField(code, field.getType().getTypeOfElement());
         return code.toString();
     }
 
     private String generateGetField(GetFieldInstruction getFieldInstruction) {
         var code = new StringBuilder();
 
-        var firstOperand = getFieldInstruction.getOperands().getFirst();
-        var callerType = (ClassType) firstOperand.getType();
+        var callerType = (ClassType) getFieldInstruction.getOperands().get(0).getType();
         var field = (Operand) getFieldInstruction.getOperands().get(1);
-        var fieldType = field.getType().getTypeOfElement();
-        var fieldName = field.getName();
 
-        code.append(generators.apply(firstOperand));
-        code.append("getfield ").append(callerType.getName()).append("/").append(fieldName).append(" ");
+        code.append(generators.apply(getFieldInstruction.getOperands().get(0)));
+        code.append("getfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
 
-        decideReturnTypeForInvokeOrPutGetField(code, fieldType);
-
+        decideReturnTypeForInvokeOrPutGetField(code, field.getType().getTypeOfElement());
         return code.append("\n").toString();
     }
 
@@ -432,4 +437,3 @@ public class JasminGenerator {
         };
     }
 }
-
