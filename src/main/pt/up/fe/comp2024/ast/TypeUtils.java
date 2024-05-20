@@ -59,6 +59,7 @@ public class TypeUtils {
             case ARRAY_DECLARATION -> new Type(INT_TYPE_NAME, true);
             case ARRAY_ACCESS -> new Type(INT_TYPE_NAME, false);
             case ARRAY_LITERAL -> new Type(INT_TYPE_NAME, true);
+            case LENGTH -> new Type(INT_TYPE_NAME, false);
             default ->
                     new Type("undefined", false);
         };

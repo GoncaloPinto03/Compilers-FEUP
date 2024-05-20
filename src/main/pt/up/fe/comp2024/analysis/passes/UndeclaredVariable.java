@@ -310,6 +310,10 @@ public class UndeclaredVariable extends AnalysisVisitor {
             ));
         }
 
+        if (rhsType.getName().equals("ArrayLiteral") && lhsType.isArray()){
+            return null;
+        }
+
         // Check if types are compatible for other cases (e.g., variable assignment)
         if (!TypeUtils.areTypesAssignable(rhsType, lhsType)) {
             String message = String.format("Type mismatch: cannot assign %s to %s", rhsType, lhsType);
@@ -529,17 +533,13 @@ public class UndeclaredVariable extends AnalysisVisitor {
             }
         }
 
-        /*
-        if (table.getMethods().contains(test.getName())) {
-            for (var param : method.getChildren()) {
-                var paramType = TypeUtils.getExprType(param, table);
-                var mathodType = TypeUtils.getExprType(method, table);
-                if (TypeUtils.getExprType(param, table) != TypeUtils.getExprType(method, table)) {
-                    return null;
-                }
-            }
+        if(table.getImports().contains(method.get("value"))){
+            return null;
         }
-         */
+
+        if(table.getMethods().contains(method.get("value"))){
+            return null;
+        }
 
         if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){
 
