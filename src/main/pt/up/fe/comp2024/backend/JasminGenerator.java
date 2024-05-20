@@ -92,10 +92,11 @@ public class JasminGenerator {
         code.append(".super ").append(superclass).append(NL);
 
         for (var field : ollirResult.getOllirClass().getFields()) {
-            String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
 
-            if (fieldType.equals("A"))
-                fieldType = "Ljava/lang/String;";
+            String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
+            if (fieldType.equals("[")) {    // ARRAYREF
+                fieldType += "[" + ((ArrayType) field.getFieldType()).getElementType();
+            }
 
             String fieldAccess = "";
             if (field.getFieldAccessModifier().name().equals("PUBLIC"))
@@ -108,8 +109,6 @@ public class JasminGenerator {
 
             code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldType).append(NL);
         }
-
-
 
         boolean hasExplicitConstructors = ollirResult.getOllirClass().getMethods().stream()
                 .anyMatch(Method::isConstructMethod);
@@ -424,9 +423,10 @@ public class JasminGenerator {
     // A special case is invokeinterface, which takes a <method-spec> and an integer indicating how many arguments the method takes
     private String invokeInterface(CallInstruction callInstruction) {
         var code = new StringBuilder();
-        int numArgs = 0;
+        int numArgs = callInstruction.getArguments().size();
+
+        code.append(generators.apply(callInstruction.getOperands().get(0)));
         for (Element op : callInstruction.getArguments()) {
-            numArgs++;
             code.append(generators.apply(op));
         }
 
@@ -441,11 +441,10 @@ public class JasminGenerator {
             var elementType = element.getType().getTypeOfElement();
             decideReturnTypeForInvokeOrPutGetField(code, elementType);
         }
-        code.append(")");
+        code.append(")").append(" ").append(numArgs + 1); // +1 to include "this"
 
         var returnType = callInstruction.getReturnType().getTypeOfElement();
         decideReturnTypeForInvokeOrPutGetField(code, returnType);
-        code.append(" ").append(numArgs);
 
         return code.append("\n").toString();
     }
@@ -482,15 +481,20 @@ public class JasminGenerator {
             case BOOLEAN -> code.append("B");
             case VOID -> code.append("V");
             case STRING -> code.append("Ljava/lang/String;");
-            case ARRAYREF, OBJECTREF, CLASS, THIS -> code.append("A");
+            case ARRAYREF -> code.append("[Ljava/lang/Object;");
+            case CLASS, THIS, OBJECTREF -> code.append("L").append(returnType.toString().toLowerCase()).append(";");
+//            case OBJECTREF -> code.append("L");
         }
     }
 
     private String decideElementTypeForParamOrField(ElementType elementType) {
         return switch (elementType) {
+            case ARRAYREF -> "[";
             case INT32 -> "I";
             case BOOLEAN -> "Z";
-            case ARRAYREF, OBJECTREF, CLASS, STRING, THIS -> "A";
+            case STRING -> "Ljava/lang/String;";
+            case CLASS, OBJECTREF, THIS -> "A";
+//            case OBJECTREF -> "L";
             case VOID -> "V";
             default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
         };
