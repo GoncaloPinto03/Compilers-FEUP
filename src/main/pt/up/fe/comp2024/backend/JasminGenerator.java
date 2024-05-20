@@ -251,7 +251,7 @@ public class JasminGenerator {
         String loadType = "";
         switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> loadType = "iload " + reg + NL;
-            case STRING, OBJECTREF -> loadType = "aload " + reg + NL;
+            case STRING, OBJECTREF, ARRAYREF, CLASS -> loadType = "aload " + reg + NL;
             case THIS -> loadType = "aload_0 " + NL;
         }
         return loadType;
@@ -315,8 +315,11 @@ public class JasminGenerator {
             case invokespecial -> code.append(invokeSpecial(callInstruction));
             case invokevirtual -> code.append(invokeVirtual(callInstruction));
             case invokestatic -> code.append(invokeStatic(callInstruction));
+            case invokeinterface -> code.append(invokeInterface(callInstruction));
+//          case arraylength -> code.append(invokeStatic(callInstruction));
             case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
+//        if (callInstruction.getReturnType())
 
         return code.toString();
     }
@@ -391,17 +394,45 @@ public class JasminGenerator {
         return code.append("\n").toString();
     }
 
+    // A special case is invokeinterface, which takes a <method-spec> and an integer indicating how many arguments the method takes
+    private String invokeInterface(CallInstruction callInstruction) {
+        var code = new StringBuilder();
+        int numArgs = 0;
+        for (Element op : callInstruction.getArguments()) {
+            numArgs++;
+            code.append(generators.apply(op));
+        }
+
+        var callerName = ((Operand) callInstruction.getOperands().get(0)).getName();
+        code.append("invokeinterface ").append(callerName).append("/");
+
+        var literal = (LiteralElement) callInstruction.getOperands().get(1);
+        code.append(literal.getLiteral().replace("\"", ""));
+
+        code.append("(");
+        for (Element element : callInstruction.getArguments()) {
+            var elementType = element.getType().getTypeOfElement();
+            decideReturnTypeForInvokeOrPutGetField(code, elementType);
+        }
+        code.append(")");
+
+        var returnType = callInstruction.getReturnType().getTypeOfElement();
+        decideReturnTypeForInvokeOrPutGetField(code, returnType);
+        code.append(" ").append(numArgs);
+
+        return code.append("\n").toString();
+    }
 
     private String generatePutField(PutFieldInstruction putFieldInstruction) {
         var code = new StringBuilder();
 
-        var callerType = (ClassType) putFieldInstruction.getOperands().get(0).getType();
+//        var callerType = (ClassType) putFieldInstruction.getOperands().get(0).getType();
         var field = (Operand) putFieldInstruction.getOperands().get(1);
 
         code.append(generators.apply(putFieldInstruction.getOperands().get(0))).append(generators.apply(putFieldInstruction.getOperands().get(2)));
-        code.append("putfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
+        code.append("putfield ").append(((ClassType) putFieldInstruction.getOperands().get(0).getType()).getName()).append("/").append(((Operand) putFieldInstruction.getOperands().get(1)).getName()).append(" ");
 
-        decideReturnTypeForInvokeOrPutGetField(code, field.getType().getTypeOfElement());
+        decideReturnTypeForInvokeOrPutGetField(code, ((Operand) putFieldInstruction.getOperands().get(1)).getType().getTypeOfElement());
         return code.toString();
     }
 
