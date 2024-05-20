@@ -54,6 +54,13 @@ public enum Kind {
     CONSTRUCTOR,
     IMPORT_DECL,
     VAR_DECLARATION,
+
+    IF_STM,
+    WHILE_STM,
+    FOR_STMT,
+
+    BRACKETS,
+
     VAR_REF_EXPR, MAIN_DECL();
 
 
