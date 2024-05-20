@@ -315,11 +315,41 @@ public class JasminGenerator {
             case invokespecial -> code.append(invokeSpecial(callInstruction));
             case invokevirtual -> code.append(invokeVirtual(callInstruction));
             case invokestatic -> code.append(invokeStatic(callInstruction));
+            case invokeinterface -> code.append(invokeInterface(callInstruction));
             case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
 
+        // handle special case of VOID
+        if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
+            // Only pop if the result is not used by a subsequent instruction
+            if (usesResultOf(callInstruction)) {
+                code.append("pop").append(NL);
+            }
         return code.toString();
     }
+
+    private boolean usesResultOf(Instruction inst) {
+        if (currentMethod == null) {
+            return false;
+        }
+
+        List<Instruction> instructions = currentMethod.getInstructions();
+        int index = instructions.indexOf(inst);
+
+        if (index == -1 || index == instructions.size() - 1) {
+            return false;
+        }
+
+        for (int i = index + 1; i < instructions.size(); i++) {
+            Instruction nextInst = instructions.get(i);
+            if (nextInst.getInstType().equals(InstructionType.ASSIGN)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
@@ -391,6 +421,34 @@ public class JasminGenerator {
         return code.append("\n").toString();
     }
 
+    // A special case is invokeinterface, which takes a <method-spec> and an integer indicating how many arguments the method takes
+    private String invokeInterface(CallInstruction callInstruction) {
+        var code = new StringBuilder();
+        int numArgs = 0;
+        for (Element op : callInstruction.getArguments()) {
+            numArgs++;
+            code.append(generators.apply(op));
+        }
+
+        var callerName = ((Operand) callInstruction.getOperands().get(0)).getName();
+        code.append("invokeinterface ").append(callerName).append("/");
+
+        var literal = (LiteralElement) callInstruction.getOperands().get(1);
+        code.append(literal.getLiteral().replace("\"", ""));
+
+        code.append("(");
+        for (Element element : callInstruction.getArguments()) {
+            var elementType = element.getType().getTypeOfElement();
+            decideReturnTypeForInvokeOrPutGetField(code, elementType);
+        }
+        code.append(")");
+
+        var returnType = callInstruction.getReturnType().getTypeOfElement();
+        decideReturnTypeForInvokeOrPutGetField(code, returnType);
+        code.append(" ").append(numArgs);
+
+        return code.append("\n").toString();
+    }
 
     private String generatePutField(PutFieldInstruction putFieldInstruction) {
         var code = new StringBuilder();
@@ -424,6 +482,7 @@ public class JasminGenerator {
             case BOOLEAN -> code.append("B");
             case VOID -> code.append("V");
             case STRING -> code.append("Ljava/lang/String;");
+            case ARRAYREF, OBJECTREF, CLASS, THIS -> code.append("A");
         }
     }
 
