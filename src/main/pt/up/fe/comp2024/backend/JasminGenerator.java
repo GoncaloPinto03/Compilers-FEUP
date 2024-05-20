@@ -352,14 +352,14 @@ public class JasminGenerator {
 
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
-        code.append(generators.apply(callInstruction.getOperands().get(0)));
+        code.append(generators.apply(callInstruction.getArguments().get(0)));
 
         for (Element arg : callInstruction.getArguments()) {
             code.append(generators.apply(arg));
         }
 
-        var className = ((ClassType) callInstruction.getOperands().get(0).getType()).getName();
-        var methodName = ((LiteralElement) callInstruction.getOperands().get(1)).getLiteral();
+        var className = ((ClassType) callInstruction.getArguments().get(0).getType()).getName();
+        var methodName = ((LiteralElement) callInstruction.getArguments().get(1)).getLiteral();
 
 //        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName()).append("/<init>");
         code.append("invokespecial ").append(className).append("/").append(methodName);
@@ -379,14 +379,14 @@ public class JasminGenerator {
 
     private String invokeVirtual(CallInstruction callInstruction) {
         var code = new StringBuilder();
-        code.append(generators.apply(callInstruction.getOperands().get(0)));
+        code.append(generators.apply(callInstruction.getArguments().get(0)));
 
         for (Element arg : callInstruction.getArguments()) {
             code.append(generators.apply(arg));
         }
 
-        var className = ((ClassType) callInstruction.getOperands().get(0).getType()).getName();
-        var methodName = ((LiteralElement) callInstruction.getOperands().get(1)).getLiteral();
+        var className = ((ClassType) callInstruction.getArguments().get(0).getType()).getName();
+        var methodName = ((LiteralElement) callInstruction.getArguments().get(1)).getLiteral();
 
 //        var callerClassName = (ClassType) callInstruction.getCaller().getType();
 //        var literal = (LiteralElement) callInstruction.getOperands().get(1);
@@ -413,8 +413,8 @@ public class JasminGenerator {
             code.append(generators.apply(arg));
         }
 
-        var className = ((Operand) callInstruction.getOperands().get(0)).getName();
-        var methodName = ((LiteralElement) callInstruction.getOperands().get(1)).getLiteral();
+        var className = ((Operand) callInstruction.getArguments().get(0)).getName();
+        var methodName = ((LiteralElement) callInstruction.getArguments().get(1)).getLiteral();
 
         code.append("invokestatic ").append(className).append("/").append(methodName.replace("\"", ""));
 //        var literal = (LiteralElement) callInstruction.getOperands().get(1);
@@ -438,12 +438,12 @@ public class JasminGenerator {
         var code = new StringBuilder();
         int numArgs = callInstruction.getArguments().size();
 
-        code.append(generators.apply(callInstruction.getOperands().get(0)));
+        code.append(generators.apply(callInstruction.getArguments().get(0)));
         for (Element arg : callInstruction.getArguments()) {
             code.append(generators.apply(arg));
         }
-        var className = ((ClassType) callInstruction.getOperands().get(0).getType()).getName();
-        var methodName = ((LiteralElement) callInstruction.getOperands().get(1)).getLiteral();
+        var className = ((ClassType) callInstruction.getArguments().get(0).getType()).getName();
+        var methodName = ((LiteralElement) callInstruction.getArguments().get(1)).getLiteral();
 
 //        var callerName = ((Operand) callInstruction.getOperands().get(0)).getName();
         code.append("invokeinterface ").append(className).append("/").append(methodName.replace("\"", ""));
