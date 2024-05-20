@@ -92,11 +92,12 @@ public class JasminGenerator {
         code.append(".super ").append(superclass).append(NL);
 
         for (var field : ollirResult.getOllirClass().getFields()) {
+
             String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
-
-            if (fieldType.equals("A"))
-                fieldType = "Ljava/lang/String;";
-
+            if (fieldType.equals("[")) {    // ARRAYREF
+                fieldType += "[" + fieldType;
+            }
+            
             String fieldAccess = "";
             if (field.getFieldAccessModifier().name().equals("PUBLIC"))
                 fieldAccess = "public";
@@ -108,8 +109,6 @@ public class JasminGenerator {
 
             code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldType).append(NL);
         }
-
-
 
         boolean hasExplicitConstructors = ollirResult.getOllirClass().getMethods().stream()
                 .anyMatch(Method::isConstructMethod);
@@ -488,9 +487,11 @@ public class JasminGenerator {
 
     private String decideElementTypeForParamOrField(ElementType elementType) {
         return switch (elementType) {
+            case ARRAYREF -> "[";
             case INT32 -> "I";
             case BOOLEAN -> "Z";
-            case ARRAYREF, OBJECTREF, CLASS, STRING, THIS -> "A";
+            case CLASS, STRING, THIS -> "A";
+            case OBJECTREF -> "L";
             case VOID -> "V";
             default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
         };
