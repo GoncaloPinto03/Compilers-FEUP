@@ -84,8 +84,8 @@ type locals [boolean isArray = false]
 
 statement
     : LCURLY ( statement )* RCURLY  #BRACKETS
-    | 'if' LPAREN expression RPAREN statement 'else' statement #ConditionStm
-    | 'while' LPAREN expression RPAREN statement #ConditionStm
+    | 'if' LPAREN expression RPAREN statement 'else' statement #IfStm
+    | 'while' LPAREN expression RPAREN statement #WhileStm
     | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
     | expression ';' #exprStmt
     | expression '=' expression ';' #assignStmt
