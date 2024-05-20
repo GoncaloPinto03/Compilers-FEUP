@@ -318,6 +318,9 @@ public class JasminGenerator {
             case invokeinterface -> code.append(invokeInterface(callInstruction));
             case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
+        // handle special case of VOID
+        if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
+            code.append("pop").append(NL);
 
         return code.toString();
     }
