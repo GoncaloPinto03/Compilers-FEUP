@@ -95,9 +95,11 @@ public class JasminGenerator {
 
             String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
             if (fieldType.equals("[")) {    // ARRAYREF
-                fieldType += "[" + fieldType;
+                fieldType += "[" + ((ArrayType) field.getFieldType()).getElementType();
             }
-            
+
+
+
             String fieldAccess = "";
             if (field.getFieldAccessModifier().name().equals("PUBLIC"))
                 fieldAccess = "public";
