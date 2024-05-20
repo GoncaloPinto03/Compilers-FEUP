@@ -315,6 +315,7 @@ public class JasminGenerator {
             case invokespecial -> code.append(invokeSpecial(callInstruction));
             case invokevirtual -> code.append(invokeVirtual(callInstruction));
             case invokestatic -> code.append(invokeStatic(callInstruction));
+            case invokeinterface -> code.append(invokeInterface(callInstruction));
             case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
 
