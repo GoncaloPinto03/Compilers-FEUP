@@ -456,6 +456,7 @@ public class JasminGenerator {
             case BOOLEAN -> code.append("B");
             case VOID -> code.append("V");
             case STRING -> code.append("Ljava/lang/String;");
+            case ARRAYREF, OBJECTREF, CLASS, THIS -> code.append("A");
         }
     }
 
