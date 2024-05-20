@@ -4,6 +4,7 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
@@ -240,6 +241,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 code.append(x.getCode());
             }
             if(child.getKind().equals("NewClass")) {
+                exprVisitor.visit(child);
+            }
+            if (child.getKind().equals("ConditionStm")) {
                 exprVisitor.visit(child);
             }
         }

@@ -37,6 +37,15 @@ public class OptUtils {
         } else if (typeNode.getKind().equals("VarRefExpr")) {
             return "i32";
         }
+        // check if it has
+        if (typeNode.getAttributes().contains("isArray")) {
+            if (typeNode.get("isArray").equals("true")) {
+                return ".array" + toOllirType(typeNode.get("value"));
+            }
+        } else if (typeNode.getKind().equals("ArrayDeclaration")) {
+            return toOllirType(typeNode.getChildren().get(0));
+        }
+
         String typeName = typeNode.get("value");
 
         return toOllirType(typeName);
@@ -44,6 +53,9 @@ public class OptUtils {
 
 
     public static String toOllirType(Type type) {
+        if (type.isArray()) {
+            return ".array" + toOllirType(type.getName());
+        }
         return toOllirType(type.getName());
     }
 

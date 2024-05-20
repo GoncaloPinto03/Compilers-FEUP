@@ -31,6 +31,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(METHOD_CALL, this::visitMethodCall);
         addVisit(NEW_CLASS, this::visitNewClass);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
+        addVisit(ARRAY_DECLARATION, this::visitArrayDeclaration);
+        addVisit(INTEGER_LITERAL, this::visitIntegerLiteral);
+        addVisit(CONDITION_STM, this::visitConditionStmt);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -227,6 +230,30 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code.toString());
     }
 
+    private OllirExprResult visitArrayDeclaration(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        code.append("new(array, ");
+        code.append(visit(node.getJmmChild(0)).getCode());
+        code.append(").array");
+        code.append(OptUtils.toOllirType(node));
+
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitIntegerLiteral(JmmNode node, Void unused) {
+        var intType = new Type(TypeUtils.getIntTypeName(), false);
+        String ollirIntType = OptUtils.toOllirType(intType);
+        String code = node.get("value") + ollirIntType;
+        return new OllirExprResult(code);
+    }
+
+    private OllirExprResult visitConditionStmt(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        code.append(visit(node.getJmmChild(0)).getCode());
+        code.append(visit(node.getJmmChild(1)).getCode());
+        return new OllirExprResult(code.toString());
+    }
 
     private boolean checkIfImport(String name) {
         for (var importID : table.getImports()) {
