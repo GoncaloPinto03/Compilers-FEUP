@@ -322,7 +322,7 @@ public class JasminGenerator {
         // handle special case of VOID
         if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
             // Only pop if the result is not used by a subsequent instruction
-            if (!usesResultOf(callInstruction)) {
+            if (usesResultOf(callInstruction)) {
                 code.append("pop").append(NL);
             }
         return code.toString();
