@@ -44,7 +44,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(PARAM_DECLARATION, this::visitParam);
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(VAR_DECLARATION, this::visitVarDecl);
-        addVisit(ASSIGN_STMT, this::visitAssignStmt);
+        //addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(METHOD_DECLARATION, this::visitMethodDecl);
         setDefaultVisit(this::defaultVisit);
     }
@@ -225,8 +225,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 continue;
             }
             if (child.getKind().equals("AssignStmt")) {
-                var childCode = visit(child);
-                code.append(childCode);
+                //var childCode = visit(child);
+                //code.append(childCode);
+                //exprVisitor.visit(child);
+                var x = exprVisitor.visit(child);
+                code.append(x.getComputation());
             }
             if (child.getKind().equals("ReturnStmt")) {
                 var childCode = visit(child);
@@ -267,9 +270,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 aux++;
             }
         }
-        if (aux == 0) {
-            code.append(" extends Object");
-        }
+        //if (aux == 0) {
+        //    code.append(" extends Object");
+        //}
 
         code.append(L_BRACKET);
 

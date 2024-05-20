@@ -54,7 +54,7 @@ public class OptUtils {
             case "boolean" -> "bool";
             case "void" -> "void";
             case "IntegerLiteral" -> "i32";
-            default -> "typeName";
+            default -> typeName;
         };
 
         return type;
