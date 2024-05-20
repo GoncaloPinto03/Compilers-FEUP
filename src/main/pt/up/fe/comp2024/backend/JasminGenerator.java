@@ -319,6 +319,7 @@ public class JasminGenerator {
 //          case arraylength -> code.append(invokeStatic(callInstruction));
             case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
+
         // handle special case of VOID
         if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
             code.append("pop").append(NL);
@@ -457,7 +458,6 @@ public class JasminGenerator {
             case BOOLEAN -> code.append("B");
             case VOID -> code.append("V");
             case STRING -> code.append("Ljava/lang/String;");
-            case ARRAYREF, OBJECTREF, CLASS, THIS -> code.append("Ljava/lang/Object;");
         }
     }
 
