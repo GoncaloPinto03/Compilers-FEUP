@@ -18,6 +18,11 @@ public class OptUtils {
 
     private static int endIfLabel = -1;
 
+    private static int whileCondLabel = -1;
+    private static int whileLoopLabel = -1;
+
+    private static int whileEndLabel = -1;
+
     public static String getTemp() {
 
         return getTemp("tmp");
@@ -28,6 +33,18 @@ public class OptUtils {
     }
     public static String getEndIfLabel() {
         return getEndIfLabel("endif");
+    }
+
+    public static String getWhileCondLabel() {
+        return getWhileCondLabel("whileCond");
+    }
+
+    public static String getWhileLoopLabel() {
+        return getWhileLoopLabel("whileLoop");
+    }
+
+    public static String getWhileEndLabel() {
+        return getWhileEndLabel("whileEnd");
     }
 
     public static String getTemp(String prefix) {
@@ -42,6 +59,18 @@ public class OptUtils {
 
     public static String getEndIfLabel(String prefix) {
         return prefix + getNextEndIfLabel();
+    }
+
+    public static String getWhileCondLabel(String prefix) {
+        return prefix + getNextWhileCondLabel();
+    }
+
+    public static String getWhileLoopLabel(String prefix) {
+        return prefix + getNextWhileLoopLabel();
+    }
+
+    public static String getWhileEndLabel(String prefix) {
+        return prefix + getNextWhileEndLabel();
     }
 
     public static int getNextTempNum() {
@@ -61,6 +90,21 @@ public class OptUtils {
         return endIfLabel;
     }
 
+    public static int getNextWhileCondLabel() {
+        whileCondLabel += 1;
+        return whileCondLabel;
+    }
+
+    public static int getNextWhileLoopLabel() {
+        whileLoopLabel += 1;
+        return whileLoopLabel;
+    }
+
+    public static int getNextWhileEndLabel() {
+        whileEndLabel += 1;
+        return whileEndLabel;
+    }
+
     public static String getCurrentIfLabel() {
 
         return "if" + ifLabel;
@@ -68,6 +112,18 @@ public class OptUtils {
 
     public static String getCurrentEndIfLabel() {
         return "endif" + endIfLabel;
+    }
+
+    public static String getCurrentWhileCondLabel() {
+        return "whileCond" + whileCondLabel;
+    }
+
+    public static String getCurrentWhileLoopLabel() {
+        return "whileLoop" + whileLoopLabel;
+    }
+
+    public static String getCurrentWhileEndLabel() {
+        return "whileEnd" + whileEndLabel;
     }
 
     public static String toOllirType(JmmNode typeNode) {

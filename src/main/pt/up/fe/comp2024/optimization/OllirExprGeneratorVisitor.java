@@ -300,8 +300,23 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private OllirExprResult visitWhileStmt(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
-        code.append(visit(node.getJmmChild(0)).getCode());
-        code.append(visit(node.getJmmChild(1)).getCode());
+        code.append(OptUtils.getWhileCondLabel()).append(":\n");
+        var aux2 = visit(node.getJmmChild(0));
+        code.append(aux2.getComputation());
+        code.append("if(");
+        code.append(aux2.getCode());
+        code.append(") goto ").append(OptUtils.getWhileLoopLabel()).append(";\n");
+        code.append("goto ").append(OptUtils.getWhileEndLabel()).append(";\n");
+
+        code.append(OptUtils.getCurrentWhileLoopLabel()).append(":\n");
+        if (node.getJmmChild(1).getKind().equals("BRACKETS")) {
+            code.append(visit(node.getJmmChild(1).getJmmChild(0)).getCode());
+        } else {
+            code.append(visit(node.getJmmChild(1)).getCode());
+        }
+        code.append("goto ").append(OptUtils.getCurrentWhileLoopLabel()).append(";\n");
+
+
         return new OllirExprResult(code.toString());
     }
 
