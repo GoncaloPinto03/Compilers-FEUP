@@ -92,11 +92,14 @@ public class JasminGenerator {
         code.append(".super ").append(superclass).append(NL);
 
         for (var field : classUnit.getFields()) {
-
-            String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
-            if (fieldType.equals("[")) {    // ARRAYREF
-                fieldType += "[" + (ArrayType) field.getFieldType();
+            String fieldType = "";
+            String fieldTypeJasmin = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
+            if (field.getFieldType().getTypeOfElement().equals(ElementType.ARRAYREF)) {
+                fieldType += "[" + (ArrayType)field.getFieldType();
+                fieldTypeJasmin = fieldType;
             }
+
+
 
             String fieldAccess = "";
             if (field.getFieldAccessModifier().name().equals("PUBLIC"))
@@ -107,7 +110,7 @@ public class JasminGenerator {
             if (field.isStaticField())
                 fieldAccess += " static";
 
-            code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldType).append(NL);
+            code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldTypeJasmin).append(NL);
         }
 
         boolean hasExplicitConstructors = classUnit.getMethods().stream()
