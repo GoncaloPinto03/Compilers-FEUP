@@ -568,10 +568,22 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitMethodCall (JmmNode method, SymbolTable table){
+        String methodname = method.get("value");
 
         if (method.getChild(0).getKind().equals("This")) {
+            if(methodname.equals("main")){
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(method),
+                        NodeUtils.getColumn(method),
+                        "This is main invalid",
+                        null)
+                );
+            }
             return null;
         }
+
+
 
 
         var test = TypeUtils.getExprType(method.getChild(0), table);
