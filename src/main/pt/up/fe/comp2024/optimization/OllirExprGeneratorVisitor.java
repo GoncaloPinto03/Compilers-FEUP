@@ -38,7 +38,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(FOR_STMT, this::visitForStmt);
         addVisit(BRACKETS, this::visitBrackets);
         addVisit(IDENTIFIER, this::visitIdentifier);
-
+        addVisit(NEGATION, this::visitNegation);
+        addVisit(EXPR_STMT, this::visitExprStmt);
+        addVisit(LENGTH, this::visitLength);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -147,6 +149,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private OllirExprResult visitMethodCall(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
+        StringBuilder aux = new StringBuilder();
 
         String functionName = node.get("value");
 
@@ -189,7 +192,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         for (int i = 1; i < node.getNumChildren(); i++) {
             code.append(", ");
-            code.append(visit(node.getJmmChild(1)).getCode());
+            var eheh = visit(node.getJmmChild(i));
+            code.append(visit(node.getJmmChild(i)).getCode());
         }
 
         if (table.getReturnType(node.get("value")) != null) {
@@ -337,6 +341,30 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         } else if (node.get("value").equals("false")) {
             code.append("0.bool");
         }
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitNegation(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        code.append("!.bool ");
+        if (node.getJmmChild(0).get("value").equals("true")) {
+            code.append("0.bool");
+        } else {
+            code.append("1.bool");
+        }
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitExprStmt(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        code.append(visit(node.getJmmChild(0)).getCode());
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitLength(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        code.append(visit(node.getJmmChild(0)).getCode());
+        code.append(".length");
         return new OllirExprResult(code.toString());
     }
 
