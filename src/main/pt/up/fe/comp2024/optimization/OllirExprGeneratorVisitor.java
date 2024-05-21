@@ -37,7 +37,10 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(WHILE_STM, this::visitWhileStmt);
         addVisit(FOR_STMT, this::visitForStmt);
         addVisit(BRACKETS, this::visitBrackets);
-
+        addVisit(IDENTIFIER, this::visitIdentifier);
+        addVisit(NEGATION, this::visitNegation);
+        addVisit(EXPR_STMT, this::visitExprStmt);
+        addVisit(LENGTH, this::visitLength);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -186,9 +189,20 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         code.append(functionName);
         code.append("\"");
 
+        StringBuilder aux = new StringBuilder();
+
         for (int i = 1; i < node.getNumChildren(); i++) {
             code.append(", ");
-            code.append(visit(node.getJmmChild(1)).getCode());
+            // check if the child is a literal or a function variable
+            if (!isVariableOrFunc(node.getJmmChild(i))) {
+                var child = visit(node.getJmmChild(i));
+                aux.append(child.getCode()).append(END_STMT);
+                // append aux ate the beginning of the code
+                code.insert(0, aux);
+                code.append(OptUtils.getCurrentTemp()).append(".i32");
+            } else {
+                code.append(visit(node.getJmmChild(i)).getCode());
+            }
         }
 
         if (table.getReturnType(node.get("value")) != null) {
@@ -202,6 +216,11 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code.toString());
 
     }
+
+//    private Boolean isLiteralOrFunctionVariable(JmmNode jmmNode){
+//        return Objects.equals(jmmNode.getKind(), "Integer") || Objects.equals(jmmNode.getKind(), "Boolean") || Objects.equals(jmmNode.getKind(), "This") || (Objects.equals(jmmNode.getKind(), "Identifier") && Objects.equals(jmmNode.get("field"), "false"))
+//                || Objects.equals(jmmNode.getKind(), "Grouping") && isLiteralOrFunctionVariable(jmmNode.getJmmChild(0));
+//    }
 
     private OllirExprResult visitVarRef(JmmNode node, Void unused) {
 
@@ -239,7 +258,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         code.append("new(array, ");
         code.append(visit(node.getJmmChild(0)).getCode());
-        code.append(").array");
+        code.append(").array.");
         code.append(OptUtils.toOllirType(node));
 
         return new OllirExprResult(code.toString());
@@ -329,6 +348,53 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code.toString());
     }
 
+    private OllirExprResult visitIdentifier(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        if (node.get("value").equals("true")) {
+            code.append("1.bool");
+        } else if (node.get("value").equals("false")) {
+            code.append("0.bool");
+        }
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitNegation(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        code.append("!.bool ");
+        if (node.getJmmChild(0).get("value").equals("true")) {
+            code.append("0.bool");
+        } else {
+            code.append("1.bool");
+        }
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitExprStmt(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        code.append(visit(node.getJmmChild(0)).getCode());
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitLength(JmmNode node, Void unused) {
+        if (!isVariableOrFunc(node)) {
+            StringBuilder code = new StringBuilder();
+            code.append(OptUtils.getTemp()).append(".i32").append(" := ").append(".i32");
+            code.append(" arraylength(");
+            code.append(visit(node.getJmmChild(0)).getCode());
+            code.append(").i32");
+            return new OllirExprResult(code.toString());
+        } else {
+            StringBuilder code = new StringBuilder();
+            code.append("arraylength(");
+            code.append(visit(node.getJmmChild(0)).getCode());
+            code.append(").i32");
+            return new OllirExprResult(code.toString());
+        }
+    }
+
+    private boolean isVariableOrFunc(JmmNode jmmNode){
+        return jmmNode.getKind().equals("Parentesis") || jmmNode.getKind().equals("NewClass") || jmmNode.getKind().equals("Negation") || jmmNode.getKind().equals("BinaryExpr") || jmmNode.getKind().equals("ArrayLiteral") || jmmNode.getKind().equals("VarRefExpr") || jmmNode.getKind().equals("MethodCall") || jmmNode.getKind().equals("IntegerLiteral") || jmmNode.getKind().equals("This") || (jmmNode.getKind().equals("Identifier") && jmmNode.get("field").equals("false"));
+    }
 
     private boolean checkIfImport(String name) {
         for (var importID : table.getImports()) {

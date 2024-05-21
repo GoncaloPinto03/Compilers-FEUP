@@ -136,7 +136,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 code.append(".i32");
             } else if (typeValue.equals("Identifier")) {
                 var childCode = child.get("value");
-                code.append(childCode);
+                if (childCode.equals("true")) {
+                    code.append("1");
+                } else if (childCode.equals("false")) {
+                    code.append("0");
+                }
                 code.append(".bool");
             } else if (typeValue.equals("Void")) {
                 var childCode = child.get("name");
@@ -175,7 +179,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         StringBuilder code = new StringBuilder(".method ");
 
         // public
-        code.append("public ");
+        if (currentMethod.equals("main")) {
+            code.append("public ");
+        }
 
         var attributes = node.getAttributes();
         for (var attribute : attributes) {
@@ -237,7 +243,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 code.append(childCode);
             }
             if (child.getKind().equals("ExprStmt")) {
-                var x = exprVisitor.visit(child.getJmmChild(0));
+                var x = exprVisitor.visit(child);
                 code.append(x.getCode());
             }
             if(child.getKind().equals("NewClass")) {

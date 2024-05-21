@@ -61,6 +61,8 @@ public enum Kind {
 
     BRACKETS,
 
+    EXPR_STMT,
+
     VAR_REF_EXPR, MAIN_DECL();
 
 
