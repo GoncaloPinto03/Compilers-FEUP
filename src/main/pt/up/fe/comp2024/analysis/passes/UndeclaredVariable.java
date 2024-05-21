@@ -571,7 +571,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         String methodname = method.get("value");
 
         if (method.getChild(0).getKind().equals("This")) {
-            if(methodname.equals("main")){
+
                 addReport(Report.newError(
                         Stage.SEMANTIC,
                         NodeUtils.getLine(method),
@@ -579,7 +579,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                         "This is main invalid",
                         null)
                 );
-            }
+
             return null;
         }
 
