@@ -393,7 +393,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     }
 
     private boolean isLiteralOrFunctionVariable(JmmNode jmmNode){
-        return jmmNode.getKind().equals("VarRefExpr") || jmmNode.getKind().equals("MethodCall") || jmmNode.getKind().equals("IntegerLiteral") || jmmNode.getKind().equals("Boolean") || jmmNode.getKind().equals("This") || (jmmNode.getKind().equals("Identifier") && jmmNode.get("field").equals("false"))
+        return jmmNode.getKind().equals("VarRefExpr") || jmmNode.getKind().equals("MethodCall") || jmmNode.getKind().equals("IntegerLiteral") || jmmNode.getKind().equals("This") || (jmmNode.getKind().equals("Identifier") || (jmmNode.getKind().equals("Increment") || (jmmNode.getKind().equals("BinaryExpr") || (jmmNode.getKind().equals("Negation") || (jmmNode.getKind().equals("NewClass") && jmmNode.get("field").equals("false"))
                 || jmmNode.getKind().equals("Grouping") && isLiteralOrFunctionVariable(jmmNode.getJmmChild(0));
     }
 
