@@ -37,6 +37,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(WHILE_STM, this::visitWhileStmt);
         addVisit(FOR_STMT, this::visitForStmt);
         addVisit(BRACKETS, this::visitBrackets);
+        addVisit(IDENTIFIER, this::visitIdentifier);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -326,6 +327,16 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         code.append(visit(node.getJmmChild(1)).getCode());
         code.append(visit(node.getJmmChild(2)).getCode());
         code.append(visit(node.getJmmChild(3)).getCode());
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitIdentifier(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        if (node.get("value").equals("true")) {
+            code.append("1.bool");
+        } else if (node.get("value").equals("false")) {
+            code.append("0.bool");
+        }
         return new OllirExprResult(code.toString());
     }
 

@@ -136,7 +136,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 code.append(".i32");
             } else if (typeValue.equals("Identifier")) {
                 var childCode = child.get("value");
-                code.append(childCode);
+                if (childCode.equals("true")) {
+                    code.append("1");
+                } else if (childCode.equals("false")) {
+                    code.append("0");
+                }
                 code.append(".bool");
             } else if (typeValue.equals("Void")) {
                 var childCode = child.get("name");
