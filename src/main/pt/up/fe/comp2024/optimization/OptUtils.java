@@ -14,9 +14,20 @@ import static pt.up.fe.comp2024.ast.Kind.TYPE;
 public class OptUtils {
     private static int tempNumber = -1;
 
+    private static int ifLabel = -1;
+
+    private static int endIfLabel = -1;
+
     public static String getTemp() {
 
         return getTemp("tmp");
+    }
+
+    public static String getIfLabel() {
+        return getIfLabel("if");
+    }
+    public static String getEndIfLabel() {
+        return getEndIfLabel("endif");
     }
 
     public static String getTemp(String prefix) {
@@ -24,10 +35,39 @@ public class OptUtils {
         return prefix + getNextTempNum();
     }
 
+    public static String getIfLabel(String prefix) {
+
+        return prefix + getNextIfLabel();
+    }
+
+    public static String getEndIfLabel(String prefix) {
+        return prefix + getNextEndIfLabel();
+    }
+
     public static int getNextTempNum() {
 
         tempNumber += 1;
         return tempNumber;
+    }
+
+    public static int getNextIfLabel() {
+
+        ifLabel += 1;
+        return ifLabel;
+    }
+
+    public static int getNextEndIfLabel() {
+        endIfLabel += 1;
+        return endIfLabel;
+    }
+
+    public static String getCurrentIfLabel() {
+
+        return "if" + ifLabel;
+    }
+
+    public static String getCurrentEndIfLabel() {
+        return "endif" + endIfLabel;
     }
 
     public static String toOllirType(JmmNode typeNode) {

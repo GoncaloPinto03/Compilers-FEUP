@@ -49,8 +49,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.THIS, this::visitThisExpr);
         addVisit("IfStm", this::visitIfStm);
         addVisit("WhileStm", this::visitWhileStm);
-
-
     }
 
 
@@ -355,6 +353,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type arrayType = arrayNode != null ? TypeUtils.getExprType(arrayNode, table) : null;
         Type indexType = indexNode != null ? TypeUtils.getExprType(indexNode, table) : null;
 
+        if(arrayType == null){
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(array),
+                    NodeUtils.getColumn(array),
+                    "Not declared",
+                    null)
+            );
+            return  null;
+        }
+
         // Check if the array node is actually an array
         if (!arrayType.isArray()){
             String message = "Invalid array access: '" + arrayNode.get("name") + "' is not an array.";
@@ -421,26 +430,47 @@ public class UndeclaredVariable extends AnalysisVisitor {
         JmmNode leftExpr = node.getChild(0);
         JmmNode rightExpr = node.getChild(1);
 
+        Type leftType = TypeUtils.getExprType(leftExpr, table);
+        Type rightType = TypeUtils.getExprType(rightExpr, table);
 
-        Type leftType = TypeUtils.getExprType(leftExpr,table);
-        Type rightType = TypeUtils.getExprType(rightExpr,table);
+        // Get the operator type to handle different binary operations
+        String operator = node.get("op");
 
-        // Check if the types are compatible for the binary operation
-        if (!leftType.getName().equals("int") ||!rightType.getName().equals("int") || leftType.isArray()) {
-            String message =("The type of operand of binary expression is not compatible with the operation.");
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(node),
-                    NodeUtils.getColumn(node),
-                    message, null)
-            );
-        } else if (leftType.getName().equals("null") || rightType.getName().equals("null")){
-            return null;
-        } else if (leftType.getName().equals("int") && rightType.getName().equals("int") && !leftType.isArray() && !rightType.isArray() ) {
+        if (leftType == null || rightType == null) {
+            // If either type is null, we can't do type checking
             return null;
         }
-        else{
-            String message =("The type of operand of binary expression is not compatible with the operation.");
+
+        boolean isIntOperation = operator.equals("+") || operator.equals("-") ||
+                operator.equals("*") || operator.equals("/") ||
+                operator.equals("%") || operator.equals("<") ||
+                operator.equals(">") || operator.equals("<=") ||
+                operator.equals(">=");
+
+        boolean isBooleanOperation = operator.equals("&&") || operator.equals("||");
+
+        if (isIntOperation) {
+            if (!leftType.getName().equals("int") || !rightType.getName().equals("int") || leftType.isArray() || rightType.isArray()) {
+                String message = "The type of operand of binary expression is not compatible with the integer operation.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(node),
+                        NodeUtils.getColumn(node),
+                        message, null)
+                );
+            }
+        } else if (isBooleanOperation) {
+            if (!leftType.getName().equals("boolean") || !rightType.getName().equals("boolean")) {
+                String message = "The type of operand of binary expression is not compatible with the boolean operation.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(node),
+                        NodeUtils.getColumn(node),
+                        message, null)
+                );
+            }
+        } else {
+            String message = "Unknown binary operation.";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),
@@ -453,6 +483,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
+
     private Void visitAssignStmt(JmmNode assignStmt, SymbolTable table) {
         JmmNode lhsNode = assignStmt.getChildren().get(0);
         JmmNode rhsNode = assignStmt.getChildren().get(1);
@@ -460,7 +491,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type lhsType = TypeUtils.getExprType(lhsNode, table);
         Type rhsType = TypeUtils.getExprType(rhsNode, table);
 
-        if(rhsType == null){
+        if(rhsType == null || lhsType == null){
             return null;
         }
 
@@ -538,6 +569,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         if (method.getChild(0).getKind().equals("This")) {
             return null;
         }
+
 
         var test = TypeUtils.getExprType(method.getChild(0), table);
 
