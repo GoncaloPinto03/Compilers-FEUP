@@ -243,8 +243,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
             if(child.getKind().equals("NewClass")) {
                 exprVisitor.visit(child);
             }
-            if (child.getKind().equals("ConditionStm")) {
-                exprVisitor.visit(child);
+            if (child.getKind().equals("IfStm")) {
+                var x = exprVisitor.visit(child);
+                code.append(x.getCode());
             }
         }
 
