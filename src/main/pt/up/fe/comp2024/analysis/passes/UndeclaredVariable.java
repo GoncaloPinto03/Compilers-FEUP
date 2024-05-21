@@ -571,16 +571,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
         String methodname = method.get("value");
 
         if (method.getChild(0).getKind().equals("This")) {
-            if(methodname.equals("main")){
+            return null;
+        }
+
+        if (methodname.equals("main")) {
+            // Se estamos no contexto da função main, não permitimos "this"
+            if (method.getChild(0).getKind().equals("This")) {
                 addReport(Report.newError(
                         Stage.SEMANTIC,
                         NodeUtils.getLine(method),
                         NodeUtils.getColumn(method),
-                        "This is main invalid",
+                        "Cannot use this in main",
                         null)
                 );
+                return null;
             }
-            return null;
         }
 
 
