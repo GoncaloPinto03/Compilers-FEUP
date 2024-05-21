@@ -566,29 +566,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }
 
-    private boolean isValidArrayInitialization (JmmNode arrayInit){
-        return (arrayInit.getKind().equals("ArrayLiteral") && arrayInit.get("type").equals("Object"));
-    }
+
     private Void visitMethodCall (JmmNode method, SymbolTable table){
 
         if (method.getChild(0).getKind().equals("This")) {
             return null;
-        }
-
-        for (JmmNode arg : method.getChildren().subList(1, method.getNumChildren())) {
-            if (arg.getKind().equals("ArrayLiteral")) {
-                // Verificar se a inicialização é válida
-                if (!isValidArrayInitialization(arg)) {
-                    String message = "Invalid array initialization in method call. Use 'new int[]{...}' for array literals.";
-                    addReport(Report.newError(
-                            Stage.SEMANTIC,
-                            NodeUtils.getLine(method),
-                            NodeUtils.getColumn(method),
-                            message,
-                            null
-                    ));
-                }
-            }
         }
 
 
