@@ -94,9 +94,15 @@ public class JasminGenerator {
         for (var field : classUnit.getFields()) {
 
             String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
-//            if (fieldType.equals("[")) {    // ARRAYREF
-//                fieldType += "[" + ((ArrayType) field.getFieldType()).getElementType();
-//            }
+            ElementType fieldTypeOfElement = field.getFieldType().getTypeOfElement();
+            // handle special case for arrays
+            if (fieldType.equals("[")) {    // ARRAYREF
+                fieldType = "[" + fieldTypeOfElement;
+            }
+            if (fieldType.equals("L")) {
+                fieldType = "L" + className;    // still need to check if I need to replace . with /
+            }
+
 
             String fieldAccess = "";
             if (field.getFieldAccessModifier().name().equals("PUBLIC"))
@@ -169,26 +175,29 @@ public class JasminGenerator {
 
         // traverse method parameters
         for (Element argument : method.getParams()) {
-            String elementType = decideElementTypeForParamOrField(argument.getType().getTypeOfElement());
+            String argumentType = decideElementTypeForParamOrField(argument.getType().getTypeOfElement());
+            ElementType argumentTypeOfElement = argument.getType().getTypeOfElement();
+            // handle special case for arrays
+            if (argumentType.equals("[")) {    // ARRAYREF
+                argumentType = "[" + argumentTypeOfElement;
+            }
+            if (argumentType.equals("L")) {
+                argumentType = "L" + method.getOllirClass().getClassName();    // still need to check if I need to replace . with /
+            }
 
-//            if (argument.getType().getTypeOfElement().toString().equals("STRING"))
-//                elementType = "Ljava/lang/String;";
-//            if (argument.getType().getTypeOfElement().toString().equals("ARRAYREF"))
-//                elementType = "[Ljava/lang/String;";
-
-            code.append(elementType);
+            code.append(argumentType);
         }
 
         code.append(")");
 
-        var returnType = decideElementTypeForParamOrField(method.getReturnType().getTypeOfElement());
+        decideReturnTypeForInvokeOrPutGetField(code, method.getReturnType().getTypeOfElement());
 
 //        if (method.getReturnType().getTypeOfElement().toString().equals("STRING"))
 //            returnType = "Ljava/lang/String;";
 //        if (method.getReturnType().getTypeOfElement().toString().equals("ARRAYREF"))
 //            returnType = "[Ljava/lang/String;";
 
-        code.append(returnType).append(NL);
+        code.append(NL);
 
         // Add limits
         code.append(TAB).append(".limit stack 99").append(NL);
@@ -483,10 +492,11 @@ public class JasminGenerator {
             case VOID -> code.append("V");
             case STRING -> code.append("Ljava/lang/String;");
             case ARRAYREF -> code.append("[Ljava/lang/Object;");
-            case CLASS, THIS, OBJECTREF -> {
-                String className = getClassNameForElementType(returnType);
-                code.append("L").append(className).append(";");
-            }
+            case CLASS, THIS, OBJECTREF -> code.append("L");
+//            case CLASS, THIS, OBJECTREF -> {
+//                String className = getClassNameForElementType(returnType);
+//                code.append("L").append(className).append(";");
+//            }
         }
     }
 
@@ -496,10 +506,11 @@ public class JasminGenerator {
             case INT32 -> "I";
             case BOOLEAN -> "Z";
             case STRING -> "Ljava/lang/String;";
-            case CLASS, OBJECTREF, THIS -> {    // L + classname
-                String className = getClassNameForElementType(elementType);
-                yield "L" + className + ";";
-            }
+//            case CLASS, OBJECTREF, THIS -> {    // L + classname
+//                String className = getClassNameForElementType(elementType);
+//                yield "L" + className + ";";
+//            }
+            case CLASS, OBJECTREF, THIS -> "L";     // L + classname
             case VOID -> "V";
             default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
         };
