@@ -167,21 +167,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
-        Set <String> fieldsName = new HashSet<>();
-        List<Symbol> fields = table.getFields();
 
-        for (Symbol field : fields){
-            if(!fieldsName.add(field.getName())){
-                String message = "Duplicate field name";
-                addReport(Report.newError(
-                        Stage.SEMANTIC,
-                        NodeUtils.getLine(method),
-                        NodeUtils.getColumn(method),
-                        message, null)
-                );
-            }
-            return null;
-        }
 
         var nrVarags = params.stream().filter(
                 param->param.getChild(0).getKind().equals("VARARG")
@@ -579,9 +565,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
         node.put("isArray", "false");
         return null;
     }
+
+
     private Void visitMethodCall (JmmNode method, SymbolTable table){
+        String methodname = method.get("value");
 
         if (method.getChild(0).getKind().equals("This")) {
+            if(methodname.equals("main")){
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(method),
+                        NodeUtils.getColumn(method),
+                        "This is main invalid",
+                        null)
+                );
+            }
             return null;
         }
 
