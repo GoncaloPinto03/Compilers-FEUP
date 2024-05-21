@@ -567,9 +567,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
     private boolean isValidArrayInitialization (JmmNode arrayInit){
-        return arrayInit.getKind().equals("ArrayCreationExpr") ||
-                arrayInit.getKind().equals("MultiDimensionalArrayCreationExpr") ||
-                (arrayInit.getKind().equals("ArrayLiteral") && arrayInit.get("type").equals("Object"));
+        return (arrayInit.getKind().equals("ArrayLiteral") && arrayInit.get("type").equals("Object"));
     }
     private Void visitMethodCall (JmmNode method, SymbolTable table){
 
