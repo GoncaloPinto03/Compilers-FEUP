@@ -149,7 +149,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private OllirExprResult visitMethodCall(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
-        StringBuilder aux = new StringBuilder();
 
         String functionName = node.get("value");
 
@@ -190,10 +189,20 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         code.append(functionName);
         code.append("\"");
 
+        StringBuilder aux = new StringBuilder();
+
         for (int i = 1; i < node.getNumChildren(); i++) {
             code.append(", ");
-            var eheh = visit(node.getJmmChild(i));
-            code.append(visit(node.getJmmChild(i)).getCode());
+            // check if the child is a literal or a function variable
+            if (!isLiteralOrFunctionVariable(node.getJmmChild(i))) {
+                var child = visit(node.getJmmChild(i));
+                aux.append(child.getCode()).append(END_STMT);
+                // append aux ate the beginning of the code
+                code.insert(0, aux);
+                code.append(OptUtils.getCurrentTemp()).append(".i32");
+            } else {
+                code.append(visit(node.getJmmChild(i)).getCode());
+            }
         }
 
         if (table.getReturnType(node.get("value")) != null) {
@@ -207,6 +216,11 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code.toString());
 
     }
+
+//    private Boolean isLiteralOrFunctionVariable(JmmNode jmmNode){
+//        return Objects.equals(jmmNode.getKind(), "Integer") || Objects.equals(jmmNode.getKind(), "Boolean") || Objects.equals(jmmNode.getKind(), "This") || (Objects.equals(jmmNode.getKind(), "Identifier") && Objects.equals(jmmNode.get("field"), "false"))
+//                || Objects.equals(jmmNode.getKind(), "Grouping") && isLiteralOrFunctionVariable(jmmNode.getJmmChild(0));
+//    }
 
     private OllirExprResult visitVarRef(JmmNode node, Void unused) {
 
@@ -244,7 +258,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         code.append("new(array, ");
         code.append(visit(node.getJmmChild(0)).getCode());
-        code.append(").array");
+        code.append(").array.");
         code.append(OptUtils.toOllirType(node));
 
         return new OllirExprResult(code.toString());
@@ -362,12 +376,26 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     }
 
     private OllirExprResult visitLength(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-        code.append(visit(node.getJmmChild(0)).getCode());
-        code.append(".length");
-        return new OllirExprResult(code.toString());
+        if (!isLiteralOrFunctionVariable(node)) {
+            StringBuilder code = new StringBuilder();
+            code.append(OptUtils.getTemp()).append(".i32").append(" := ").append(".i32");
+            code.append(" arraylength(");
+            code.append(visit(node.getJmmChild(0)).getCode());
+            code.append(").i32");
+            return new OllirExprResult(code.toString());
+        } else {
+            StringBuilder code = new StringBuilder();
+            code.append("arraylength(");
+            code.append(visit(node.getJmmChild(0)).getCode());
+            code.append(").i32");
+            return new OllirExprResult(code.toString());
+        }
     }
 
+    private boolean isLiteralOrFunctionVariable(JmmNode jmmNode){
+        return jmmNode.getKind().equals("VarRefExpr") || jmmNode.getKind().equals("MethodCall") || jmmNode.getKind().equals("IntegerLiteral") || jmmNode.getKind().equals("Boolean") || jmmNode.getKind().equals("This") || (jmmNode.getKind().equals("Identifier") && jmmNode.get("field").equals("false"))
+                || jmmNode.getKind().equals("Grouping") && isLiteralOrFunctionVariable(jmmNode.getJmmChild(0));
+    }
 
     private boolean checkIfImport(String name) {
         for (var importID : table.getImports()) {

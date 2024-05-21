@@ -105,6 +105,11 @@ public class OptUtils {
         return whileEndLabel;
     }
 
+    public static String getCurrentTemp() {
+
+        return "tmp" + tempNumber;
+    }
+
     public static String getCurrentIfLabel() {
 
         return "if" + ifLabel;
