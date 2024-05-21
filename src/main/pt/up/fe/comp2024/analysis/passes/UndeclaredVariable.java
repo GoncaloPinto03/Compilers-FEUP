@@ -180,6 +180,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                         message, null)
                 );
             }
+            return null;
         }
 
         var nrVarags = params.stream().filter(
