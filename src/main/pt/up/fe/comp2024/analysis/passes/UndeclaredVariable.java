@@ -413,7 +413,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Void visitNegationExpr(JmmNode node, SymbolTable table){
         node.put("type", "boolean");
-        if(!node.getChild(0).get("type").equals("boolean")){
+        if(!(node.getChild(0).get("value").equals("true")) && !(node.getChild(0).get("value").equals("false"))){
             String message = "Invalid";
             addReport(Report.newError(
                     Stage.SEMANTIC,
