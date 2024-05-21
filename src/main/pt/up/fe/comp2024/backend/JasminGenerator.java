@@ -374,7 +374,7 @@ public class JasminGenerator {
         code.append(generators.apply(callInstruction.getOperands().get(0)));
 
         for (Element op : callInstruction.getArguments()) {
-            code.append(generateOperand((Operand) op));
+            code.append(generators.apply(op));
         }
 
         var callerClassName = (ClassType) callInstruction.getCaller().getType();
@@ -490,11 +490,11 @@ public class JasminGenerator {
 
     private String decideElementTypeForParamOrField(ElementType elementType) {
         return switch (elementType) {
-            case ARRAYREF -> "[Ljava/lang/String;";
+            case ARRAYREF -> "[Ljava/lang/String;"; // adicionar tipo do array
             case INT32 -> "I";
             case BOOLEAN -> "Z";
             case STRING -> "Ljava/lang/String;";
-            case CLASS, OBJECTREF, THIS -> "A";
+            case CLASS, OBJECTREF, THIS -> "A"; // L classname
 //            case OBJECTREF -> "L";
             case VOID -> "V";
             default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
