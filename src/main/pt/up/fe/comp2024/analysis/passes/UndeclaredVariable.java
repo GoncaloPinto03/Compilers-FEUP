@@ -353,6 +353,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type arrayType = arrayNode != null ? TypeUtils.getExprType(arrayNode, table) : null;
         Type indexType = indexNode != null ? TypeUtils.getExprType(indexNode, table) : null;
 
+        if(arrayType == null){
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(array),
+                    NodeUtils.getColumn(array),
+                    "Not declared",
+                    null)
+            );
+            return  null;
+        }
+
         // Check if the array node is actually an array
         if (!arrayType.isArray()){
             String message = "Invalid array access: '" + arrayNode.get("name") + "' is not an array.";
