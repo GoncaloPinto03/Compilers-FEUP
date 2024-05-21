@@ -167,6 +167,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
+        String methodName = method.get("name");
+
+        if (methodName.equals("main")) {
+            // Se estamos no contexto da função main, não permitimos "this"
+            if (method.getChild(0).getKind().equals("This")) {
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(method),
+                        NodeUtils.getColumn(method),
+                        "Cannot use this in main",
+                        null)
+                );
+                return null;
+            }
+        }
 
 
         var nrVarags = params.stream().filter(
@@ -568,24 +583,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitMethodCall (JmmNode method, SymbolTable table){
-        String methodname = method.get("value");
 
         if (method.getChild(0).getKind().equals("This")) {
             return null;
-        }
-
-        if (methodname.equals("main")) {
-            // Se estamos no contexto da função main, não permitimos "this"
-            if (method.getChild(0).getKind().equals("This")) {
-                addReport(Report.newError(
-                        Stage.SEMANTIC,
-                        NodeUtils.getLine(method),
-                        NodeUtils.getColumn(method),
-                        "Cannot use this in main",
-                        null)
-                );
-                return null;
-            }
         }
 
 
