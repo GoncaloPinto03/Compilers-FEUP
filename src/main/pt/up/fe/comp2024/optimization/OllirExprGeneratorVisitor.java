@@ -33,7 +33,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(ARRAY_DECLARATION, this::visitArrayDeclaration);
         addVisit(INTEGER_LITERAL, this::visitIntegerLiteral);
-        //addVisit(CONDITION_STM, this::visitConditionStmt);
         addVisit(IF_STM, this::visitIfStmt);
         addVisit(WHILE_STM, this::visitWhileStmt);
         addVisit(FOR_STMT, this::visitForStmt);

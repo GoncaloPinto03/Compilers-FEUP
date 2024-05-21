@@ -491,7 +491,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type lhsType = TypeUtils.getExprType(lhsNode, table);
         Type rhsType = TypeUtils.getExprType(rhsNode, table);
 
-        if(rhsType == null){
+        if(rhsType == null || lhsType == null){
             return null;
         }
 
