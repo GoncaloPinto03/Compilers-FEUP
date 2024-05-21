@@ -94,9 +94,9 @@ public class JasminGenerator {
         for (var field : classUnit.getFields()) {
 
             String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
-//            if (fieldType.equals("[")) {    // ARRAYREF
-//                fieldType += "[" + ((ArrayType) field.getFieldType()).getElementType();
-//            }
+            if (fieldType.equals("[")) {    // ARRAYREF
+                fieldType += "[" + (ArrayType) field.getFieldType();
+            }
 
             String fieldAccess = "";
             if (field.getFieldAccessModifier().name().equals("PUBLIC"))
@@ -482,7 +482,7 @@ public class JasminGenerator {
             case BOOLEAN -> code.append("B");
             case VOID -> code.append("V");
             case STRING -> code.append("Ljava/lang/String;");
-            case ARRAYREF -> code.append("[Ljava/lang/Object;");
+            case ARRAYREF -> code.append("[");
             case CLASS, THIS, OBJECTREF -> {
                 String className = getClassNameForElementType(returnType);
                 code.append("L").append(className).append(";");
