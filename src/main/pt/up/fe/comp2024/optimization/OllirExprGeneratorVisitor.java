@@ -33,11 +33,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(ARRAY_DECLARATION, this::visitArrayDeclaration);
         addVisit(INTEGER_LITERAL, this::visitIntegerLiteral);
-        addVisit(IF_STM, this::visitIfStmt);
-        addVisit(WHILE_STM, this::visitWhileStmt);
-        addVisit(FOR_STMT, this::visitForStmt);
-        addVisit(BRACKETS, this::visitBrackets);
-
+        addVisit(CONDITION_STM, this::visitConditionStmt);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -252,68 +248,12 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code);
     }
 
-    private OllirExprResult visitIfStmt(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-        code.append(visit(node.getJmmChild(0)).getComputation());
-
-//        JmmNode Expression = node.getJmmChild(0);
-//        JmmNode Statement1 = node.getJmmChild(1);
-//        JmmNode Statement2 = node.getJmmChild(2);
-//
-//        boolean noNext = false;
-//
-//        Expression.put("true", OptUtils.getIfLabel());
-//        Expression.put("false", OptUtils.getEndIfLabel());"
-
-        var currNode = node.getJmmChild(1);
-
-        if (node.getJmmChild(1).getKind().equals("BRACKETS")) {
-            if (node.getNumChildren() == 3) {
-                code.append("if(");
-                code.append(visit(node.getJmmChild(0)).getCode());
-                code.append(") goto ").append(OptUtils.getIfLabel()).append(";\n");
-                code.append(visit(node.getJmmChild(2).getJmmChild(0)).getCode());
-                code.append("goto ").append(OptUtils.getEndIfLabel()).append(";\n");
-
-                code.append(OptUtils.getCurrentIfLabel()).append(":\n");
-                code.append(visit(node.getJmmChild(1).getJmmChild(0)).getCode());
-                code.append(OptUtils.getCurrentEndIfLabel()).append(":\n");
-
-            } else {
-                code.append("if(");
-                code.append(visit(node.getJmmChild(0)).getCode());
-                code.append(") goto ").append(OptUtils.getIfLabel()).append(";\n");
-                var stmt = visit(node.getJmmChild(1)).getCode();
-                code.append(visit(node.getJmmChild(1)).getCode());
-                code.append(OptUtils.getTemp()).append(":\n");
-            }
-        }
-
-        return new OllirExprResult(code.toString());
-    }
-
-    private OllirExprResult visitBrackets(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-        code.append(visit(node.getJmmChild(0)).getCode());
-        return new OllirExprResult(code.toString());
-    }
-
-    private OllirExprResult visitWhileStmt(JmmNode node, Void unused) {
+    private OllirExprResult visitConditionStmt(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
         code.append(visit(node.getJmmChild(0)).getCode());
         code.append(visit(node.getJmmChild(1)).getCode());
         return new OllirExprResult(code.toString());
     }
-
-    private OllirExprResult visitForStmt(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-        code.append(visit(node.getJmmChild(0)).getCode());
-        code.append(visit(node.getJmmChild(1)).getCode());
-        code.append(visit(node.getJmmChild(2)).getCode());
-        code.append(visit(node.getJmmChild(3)).getCode());
-        return new OllirExprResult(code.toString());
-    }
-
 
     private boolean checkIfImport(String name) {
         for (var importID : table.getImports()) {
