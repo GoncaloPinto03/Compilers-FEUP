@@ -194,7 +194,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         for (int i = 1; i < node.getNumChildren(); i++) {
             code.append(", ");
             // check if the child is a literal or a function variable
-            if (!isLiteralOrFunctionVariable(node.getJmmChild(i))) {
+            if (!isVariableOrFunc(node.getJmmChild(i))) {
                 var child = visit(node.getJmmChild(i));
                 aux.append(child.getCode()).append(END_STMT);
                 // append aux ate the beginning of the code
@@ -376,7 +376,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     }
 
     private OllirExprResult visitLength(JmmNode node, Void unused) {
-        if (!isLiteralOrFunctionVariable(node)) {
+        if (!isVariableOrFunc(node)) {
             StringBuilder code = new StringBuilder();
             code.append(OptUtils.getTemp()).append(".i32").append(" := ").append(".i32");
             code.append(" arraylength(");
@@ -392,9 +392,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         }
     }
 
-    private boolean isLiteralOrFunctionVariable(JmmNode jmmNode){
-        return jmmNode.getKind().equals("VarRefExpr") || jmmNode.getKind().equals("MethodCall") || jmmNode.getKind().equals("IntegerLiteral") || jmmNode.getKind().equals("This") || (jmmNode.getKind().equals("Identifier") || (jmmNode.getKind().equals("Increment") || (jmmNode.getKind().equals("BinaryExpr") || (jmmNode.getKind().equals("Negation") || (jmmNode.getKind().equals("NewClass") && jmmNode.get("field").equals("false"))
-                || jmmNode.getKind().equals("Grouping") && isLiteralOrFunctionVariable(jmmNode.getJmmChild(0));
+    private boolean isVariableOrFunc(JmmNode jmmNode){
+        return jmmNode.getKind().equals("Parentesis") || jmmNode.getKind().equals("NewClass") || jmmNode.getKind().equals("Negation") || jmmNode.getKind().equals("BinaryExpr") || jmmNode.getKind().equals("ArrayLiteral") || jmmNode.getKind().equals("VarRefExpr") || jmmNode.getKind().equals("MethodCall") || jmmNode.getKind().equals("IntegerLiteral") || jmmNode.getKind().equals("This") || (jmmNode.getKind().equals("Identifier") && jmmNode.get("field").equals("false"));
     }
 
     private boolean checkIfImport(String name) {
