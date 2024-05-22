@@ -11,6 +11,8 @@ public enum Kind {
     CLASS_DECL,
 
     METHOD_CALL,
+
+    VARIABLE_INT,
     VARARG,
 
     NEGATION,
