@@ -654,6 +654,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
+
     private Void visitAssignStmt(JmmNode assignStmt, SymbolTable table) {
         JmmNode lhsNode = assignStmt.getChildren().get(0);
         JmmNode rhsNode = assignStmt.getChildren().get(1);
