@@ -197,63 +197,75 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
 
     private OllirExprResult visitMethodCall(JmmNode node, Void unused) {
-        StringBuilder computation = new StringBuilder();
+        StringBuilder code = new StringBuilder();
 
-        // Get function name
         String functionName = node.get("value");
 
-        // Get receiver of the method call
-        var receiver = visit(node.getJmmChild(0));
-        computation.append(receiver.getComputation());
+        if (node.getJmmChild(0).getAttributes().contains("name")) {
+            if (checkIfImport(node.getJmmChild(0).get("name"))) {
+                code.append("invokestatic(");
+                code.append(node.getJmmChild(0).get("name"));
+            } else {
 
-        String receiverCode = receiver.getCode();
-
-        if (node.getJmmChild(0).getKind().equals("This")) {
-            receiverCode = "this";
-        }
-        if (receiverCode.contains("invokevirtual") || receiverCode.contains("invokestatic")) {
-            String receiverTemp = OptUtils.getTemp() + OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(0), table));
-            computation.append(receiverTemp).append(SPACE)
-                    .append(ASSIGN).append(OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(0), table))).append(SPACE)
-                    .append(receiverCode).append(END_STMT);
-            receiverCode = receiverTemp;
-        }
-
-        // Generate code for arguments
-        StringBuilder argsCode = new StringBuilder();
-        for (int i = 1; i < node.getNumChildren(); i++) {
-            var arg = visit(node.getJmmChild(i));
-
-            String argCode = arg.getCode();
-            if (argCode.contains("invokevirtual") || argCode.contains("invokestatic")) {
-                String argTemp = OptUtils.getTemp() + OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(i), table));
-                computation.append(argTemp).append(SPACE)
-                        .append(ASSIGN).append(OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(i), table))).append(SPACE)
-                        .append(argCode).append(END_STMT);
-                argCode = argTemp;
+                code.append("invokevirtual(");
+                if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
+                    code.append(node.getJmmChild(0).get("name")).append(".");
+                    code.append(TypeUtils.getExprType(node.getJmmChild(0), table).getName());
+                } else if (node.getJmmChild(0).getKind().equals("This")){
+                    code.append("this").append(".");
+                    code.append(table.getClassName());
+                } else {
+                    code.append(node.getJmmChild(0).get("value")).append(".");
+                    code.append(table.getClassName());
+                }
             }
-            argsCode.append(", ").append(argCode);
-        }
-
-        // Check if it's a static or virtual method call
-        boolean isStaticCall = checkIfImport(receiverCode) || (node.getJmmChild(0).getKind().equals("VarRefExpr") && table.getImports().contains(receiverCode));
-        String invokeType = isStaticCall ? "invokestatic" : "invokevirtual";
-
-        // Generate the method call code
-        StringBuilder callCode = new StringBuilder();
-        callCode.append(invokeType).append("(").append(receiverCode).append(", \"").append(functionName).append("\"").append(argsCode);
-
-        // Add return type
-        if (table.getReturnType(functionName) != null) {
-            callCode.append(")").append(OptUtils.toOllirType(table.getReturnType(functionName))).append(END_STMT);
         } else {
-            callCode.append(").V").append(END_STMT);
+
+            code.append("invokevirtual(");
+            if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
+                code.append(node.getJmmChild(0).get("name")).append(".");
+                code.append(table.getClassName());
+            } else if (node.getJmmChild(0).getKind().equals("This")){
+                code.append("this").append(".");
+                code.append(table.getClassName());
+            } else {
+                code.append(node.getJmmChild(0).get("value")).append(".");
+                code.append(table.getClassName());
+            }
         }
 
-        // Combine the computation and the method call
-        String finalCode = callCode.toString();
-        return new OllirExprResult(finalCode, computation);
+        code.append(", \"");
+        code.append(functionName);
+        code.append("\"");
+
+        StringBuilder aux = new StringBuilder();
+
+        for (int i = 1; i < node.getNumChildren(); i++) {
+            code.append(", ");
+            // check if the child is a literal or a function variable
+            if (!isVariableOrFunc(node.getJmmChild(i))) {
+                var child = visit(node.getJmmChild(i));
+                aux.append(child.getCode()).append(END_STMT);
+                // append aux ate the beginning of the code
+                code.insert(0, aux);
+                code.append(OptUtils.getCurrentTemp()).append(".i32");
+            } else {
+                code.append(visit(node.getJmmChild(i)).getCode());
+            }
+        }
+
+        if (table.getReturnType(node.get("value")) != null) {
+            code.append(")").append(OptUtils.toOllirType(table.getReturnType(functionName)));
+        } else {
+            code.append(").V");
+        }
+
+        code.append(END_STMT);
+
+        return new OllirExprResult(code.toString());
+
     }
+
 
 
 
