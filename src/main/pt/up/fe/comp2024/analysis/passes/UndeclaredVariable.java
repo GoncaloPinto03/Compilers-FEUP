@@ -88,6 +88,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
             } else {
                 declaredFields.add(fieldName);
             }
+
+            Type fieldType = TypeUtils.getExprType(field, table);
+            if(fieldType.hasAttribute("VARARG")){
+                String message = "Invalid field declaration: varargs cannot be used in fields";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(field),
+                        NodeUtils.getColumn(field),
+                        message, null)
+                );
+            }
         }
         return null;
     }
