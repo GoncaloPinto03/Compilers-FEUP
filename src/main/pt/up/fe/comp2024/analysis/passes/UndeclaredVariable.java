@@ -282,7 +282,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         localVariables.clear();
 
         Type retType = table.getReturnType(currentMethod);
-        if(retType.getName().equals("VARARG")){
+        if(method.getChild(0).getKind().equals("VARARG")){
             String message = "Invalid return type: cannot return VARARG";
             addReport(Report.newError(
                     Stage.SEMANTIC,
