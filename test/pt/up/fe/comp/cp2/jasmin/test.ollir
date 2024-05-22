@@ -1,0 +1,17 @@
+import io.a;
+import io;
+
+hello {
+
+    .field public field.hello;
+
+    .method public foo(param.a).a {
+
+        ret.a $1.param.a;
+
+    }
+
+    .construct hello().V {
+        invokespecial(this, "<init>").V;
+    }
+}

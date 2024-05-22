@@ -94,13 +94,7 @@ public class JasminGenerator {
 
         for (var field : classUnit.getFields()) {
 //            String fieldType = "";
-            String fieldTypeJasmin = decideElementTypeForParamOrField(field.getFieldType());
-//            if (field.getFieldType().getTypeOfElement().equals(ElementType.ARRAYREF)) {
-//                fieldType += "[" + (ArrayType)field.getFieldType();
-//                fieldTypeJasmin = fieldType;
-//            }
-
-
+            String fieldType = decideElementTypeForParamOrField(field.getFieldType());
 
             String fieldAccess = "";
             if (field.getFieldAccessModifier().name().equals("PUBLIC"))
@@ -111,7 +105,7 @@ public class JasminGenerator {
             if (field.isStaticField())
                 fieldAccess += " static";
 
-            code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldTypeJasmin).append(NL);
+            code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldType).append(NL);
         }
 
         boolean hasExplicitConstructors = classUnit.getMethods().stream()
@@ -301,8 +295,41 @@ public class JasminGenerator {
     private String generateReturn(ReturnInstruction returnInst) {
         var code = new StringBuilder();
 
-        if (returnInst.getElementType() == ElementType.VOID)
+        if (returnInst.getElementType() == ElementType.VOID) {
             code.append("\nreturn").append(NL);
+        }
+        else if (returnInst.getElementType() == ElementType.BOOLEAN) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nireturn").append(NL);
+        }
+        else if (returnInst.getElementType() == ElementType.ARRAYREF) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        }
+        else if (returnInst.getElementType() == ElementType.CLASS) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        }
+        else if (returnInst.getElementType() == ElementType.THIS) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        }
+        else if (returnInst.getElementType() == ElementType.STRING) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        }
+        else if (returnInst.getElementType() == ElementType.OBJECTREF) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        }
+        else if (returnInst.getElementType() == ElementType.CLASS) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        }
+        else if (returnInst.getElementType() == ElementType.INT32) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nireturn").append(NL);
+        }
         else {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("\nireturn").append(NL);
@@ -516,13 +543,26 @@ public class JasminGenerator {
         };
     }
 
-    private String getClassNameForElementType(Type type) {
-        ClassUnit classUnit;
-        switch (type.getTypeOfElement()){
-            case CLASS, OBJECTREF, THIS -> classUnit = ollirResult.getOllirClass();
-            default -> throw new IllegalArgumentException("Unsupported return type: " + type.getTypeOfElement());
+    private String getClassNameForElementType(ClassType classType) {
+        ClassUnit classUnit = ollirResult.getOllirClass();
+        String name = classUnit.getClassName();
+        if (classUnit.getClassName().equals(classType.getName()))
+            name = classUnit.getClassName();
+        else {
+            for (var imprt : classUnit.getImports()) {
+                var imprtSplit = imprt.split("\\.");
+                if (imprtSplit[imprtSplit.length-1].equals(classType.getName())) {
+                    name = imprt;
+                }
+            }
         }
-        return classUnit.getClassName().replace('.', '/');
+
+
+//        switch (type.getTypeOfElement()){
+//            case CLASS, OBJECTREF, THIS -> classUnit = ollirResult.getOllirClass();
+//            default -> throw new IllegalArgumentException("Unsupported return type: " + type.getTypeOfElement());
+//        }
+        return name.replace('.', '/') + ";";
     }
 
 }
