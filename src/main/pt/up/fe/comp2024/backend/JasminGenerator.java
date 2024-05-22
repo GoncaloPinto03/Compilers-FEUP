@@ -509,12 +509,14 @@ public class JasminGenerator {
     }
 
     private String getClassNameForElementType(ElementType elementType) {
-        // Implement your logic to retrieve the class name based on the ElementType
-        // This is a placeholder implementation and should be replaced with your actual logic
-        if (elementType == ElementType.CLASS || elementType == ElementType.OBJECTREF || elementType == ElementType.THIS) {
-            return elementType.getClass().getName(); // Replace with actual class name retrieval
+        ClassUnit classUnit;
+        switch (elementType){
+            case CLASS -> classUnit = ollirResult.getOllirClass();
+            case OBJECTREF -> classUnit = ollirResult.getOllirClass();
+            case THIS -> classUnit = ollirResult.getOllirClass();
+            default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
         }
-        return "";
+        return classUnit.getClassName();
     }
 
 }
