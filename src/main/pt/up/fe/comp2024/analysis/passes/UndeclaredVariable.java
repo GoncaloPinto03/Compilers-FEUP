@@ -195,7 +195,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
         List<JmmNode> params=method.getChildren("ParamDeclaration");
         Set <String> paramsSet = new HashSet<>();
 
-        isCurrentMethodStatic = method.hasAttribute("isStatic") && !method.get("isStatic").isEmpty();
+        if(method.getAttributes().contains("isStatic")){
+            isCurrentMethodStatic = true;
+        } else {
+            isCurrentMethodStatic = false;
+        }
 
 
         if (declaredMethods.contains(methodName)) {
