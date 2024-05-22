@@ -167,20 +167,19 @@ public class UndeclaredVariable extends AnalysisVisitor {
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
-        String methodName = method.get("name");
+        Set <String> paramsSet = new HashSet<>();
 
-        if (methodName.equals("main")) {
-            // Se estamos no contexto da função main, não permitimos "this"
-            if (method.getChild(0).getKind().equals("This")) {
+        for (JmmNode param : params) {
+            if (paramsSet.contains(param.get("name"))) {
+                String message = "Duplicate parameter name";
                 addReport(Report.newError(
                         Stage.SEMANTIC,
-                        NodeUtils.getLine(method),
-                        NodeUtils.getColumn(method),
-                        "Cannot use this in main",
-                        null)
+                        NodeUtils.getLine(param),
+                        NodeUtils.getColumn(param),
+                        message, null)
                 );
-                return null;
             }
+            paramsSet.add(param.get("name"));
         }
 
 
