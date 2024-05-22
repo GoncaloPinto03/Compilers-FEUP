@@ -93,7 +93,6 @@ public class JasminGenerator {
         code.append(".super ").append(superclass).append(NL);
 
         for (var field : classUnit.getFields()) {
-//            String fieldType = "";
             String fieldType = decideElementTypeForParamOrField(field.getFieldType());
 
             String fieldAccess = "";
@@ -227,7 +226,8 @@ public class JasminGenerator {
 
         switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> code.append("istore ").append(reg).append(NL);
-            case STRING, OBJECTREF -> code.append("astore ").append(reg).append(NL);
+            case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> code.append("astore ").append(reg).append(NL);
+            case VOID -> code.append("store ").append(reg).append(NL);
             default -> throw new NotImplementedException("Unsupported assign type: " + operand.getType().getTypeOfElement());
         }
 
@@ -297,44 +297,34 @@ public class JasminGenerator {
 
         if (returnInst.getElementType() == ElementType.VOID) {
             code.append("\nreturn").append(NL);
-        }
-        else if (returnInst.getElementType() == ElementType.BOOLEAN) {
+        } else if (returnInst.getElementType() == ElementType.BOOLEAN) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nireturn").append(NL);
+        } else if (returnInst.getElementType() == ElementType.ARRAYREF) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        } else if (returnInst.getElementType() == ElementType.CLASS) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        } else if (returnInst.getElementType() == ElementType.THIS) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        } else if (returnInst.getElementType() == ElementType.STRING) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        } else if (returnInst.getElementType() == ElementType.OBJECTREF) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        } else if (returnInst.getElementType() == ElementType.CLASS) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nareturn").append(NL);
+        } else if (returnInst.getElementType() == ElementType.INT32) {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("\nireturn").append(NL);
+        } else {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("\nireturn").append(NL);
         }
-        else if (returnInst.getElementType() == ElementType.ARRAYREF) {
-            code.append(generators.apply(returnInst.getOperand()));
-            code.append("\nareturn").append(NL);
-        }
-        else if (returnInst.getElementType() == ElementType.CLASS) {
-            code.append(generators.apply(returnInst.getOperand()));
-            code.append("\nareturn").append(NL);
-        }
-        else if (returnInst.getElementType() == ElementType.THIS) {
-            code.append(generators.apply(returnInst.getOperand()));
-            code.append("\nareturn").append(NL);
-        }
-        else if (returnInst.getElementType() == ElementType.STRING) {
-            code.append(generators.apply(returnInst.getOperand()));
-            code.append("\nareturn").append(NL);
-        }
-        else if (returnInst.getElementType() == ElementType.OBJECTREF) {
-            code.append(generators.apply(returnInst.getOperand()));
-            code.append("\nareturn").append(NL);
-        }
-        else if (returnInst.getElementType() == ElementType.CLASS) {
-            code.append(generators.apply(returnInst.getOperand()));
-            code.append("\nareturn").append(NL);
-        }
-        else if (returnInst.getElementType() == ElementType.INT32) {
-            code.append(generators.apply(returnInst.getOperand()));
-            code.append("\nireturn").append(NL);
-        }
-        else {
-            code.append(generators.apply(returnInst.getOperand()));
-            code.append("\nireturn").append(NL);
-        }
-
         return code.toString();
     }
 
@@ -507,20 +497,6 @@ public class JasminGenerator {
         return code.append("\n").toString();
     }
 
-//    private void decideReturnTypeForInvokeOrPutGetField(StringBuilder code, ElementType returnType) {
-//        switch (returnType) {
-//            case INT32 -> code.append("I");
-//            case BOOLEAN -> code.append("Z");
-//            case VOID -> code.append("V");
-//            case STRING -> code.append("Ljava/lang/String;");
-//            case ARRAYREF -> code.append("[");
-//            case CLASS, THIS, OBJECTREF -> {
-//                String className = getClassNameForElementType(returnType);
-//                code.append("L").append(className).append(";");
-//            }
-//        }
-//    }
-
     private String decideElementTypeForParamOrField(Type type) {
         if (type instanceof ArrayType aType) {
             return "[" + decideElementTypeForParamOrField(aType.getElementType());
@@ -529,15 +505,10 @@ public class JasminGenerator {
             return "L" + getClassNameForElementType(cType);
         }
 
-
         return switch (type.getTypeOfElement()) {
             case INT32 -> "I";
             case BOOLEAN -> "Z";
             case STRING -> "Ljava/lang/String;";
-//            case CLASS, OBJECTREF, THIS -> {    // L + classname
-//                String className = getClassNameForElementType(elementType);
-//                yield "L" + className + ";";
-//            }
             case VOID -> "V";
             default -> throw new IllegalArgumentException("Unsupported return type: " + type.getTypeOfElement());
         };
@@ -556,12 +527,6 @@ public class JasminGenerator {
                 }
             }
         }
-
-
-//        switch (type.getTypeOfElement()){
-//            case CLASS, OBJECTREF, THIS -> classUnit = ollirResult.getOllirClass();
-//            default -> throw new IllegalArgumentException("Unsupported return type: " + type.getTypeOfElement());
-//        }
         return name.replace('.', '/') + ";";
     }
 
