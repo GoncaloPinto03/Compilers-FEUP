@@ -1,7 +1,6 @@
-class Teste {
-    public static void main(String[] args) {
-        int x;
-        int y;
-        int... b;
+class varargsInFieldInvalid{
+    public int... foo(){
+        int[] a;
+        return a;
     }
 }

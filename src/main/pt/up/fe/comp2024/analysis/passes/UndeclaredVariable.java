@@ -177,8 +177,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
         JmmNode stmt = node.getChildren().get(0);
         Type retType = TypeUtils.getExprType(stmt, table);
         Type methodType = table.getReturnType(currentMethod);
+
+
         if(retType == null){
             String message = "Invalid return type";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+            return null;
+        }
+
+        if (retType.getName().equals("VARARG")) {
+            String message = "Invalid return type: cannot return VARARG";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),
