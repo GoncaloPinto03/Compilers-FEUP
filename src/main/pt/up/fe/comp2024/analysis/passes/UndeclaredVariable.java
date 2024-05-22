@@ -386,6 +386,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type lhsType = TypeUtils.getExprType(lhsNode, table);
         Type rhsType = TypeUtils.getExprType(rhsNode, table);
 
+        if(lhsType.getName().equals("boolean") || rhsType.getName().equals("boolean")){
+            String message = "boolean in array init ";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(arrayLiteral),
+                    NodeUtils.getColumn(arrayLiteral),
+                    message, null)
+            );
+        }
+
         Type expectedType = TypeUtils.getExprType(arrayLiteral.getChildren().get(0), table);
 
         for (JmmNode element : arrayLiteral.getChildren()) {
