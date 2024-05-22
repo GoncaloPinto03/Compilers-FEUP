@@ -649,16 +649,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
 
-    private Void visitMethodCall (JmmNode method, SymbolTable table){
+    private Void visitMethodCall(JmmNode method, SymbolTable table) {
 
         if (method.getChild(0).getKind().equals("This")) {
             return null;
         }
 
-
         var test = TypeUtils.getExprType(method.getChild(0), table);
 
-        if(table.getMethods().contains(method.get("value")) || table.getImports().contains(method.get("value"))) {
+        // Check if the method is declared in the current class or its imports
+        if (table.getMethods().contains(method.get("value")) || table.getImports().contains(method.get("value"))) {
+            // If the method's class type is not among the imports and it's not the current class, report an error
             if (!table.getImports().contains(test.getName())) {
                 if (!table.getClassName().equals(test.getName())) {
                     addReport(Report.newError(
@@ -672,20 +673,23 @@ public class UndeclaredVariable extends AnalysisVisitor {
             }
         }
 
-        if(table.getImports().contains(method.get("value"))){
+        if (table.getImports().contains(method.get("value"))) {
             return null;
         }
 
-        if(table.getMethods().contains(method.get("value"))){
+        if (table.getMethods().contains(method.get("value"))) {
             return null;
         }
 
-        if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){
+        // If the method is not found in the current class methods or imports, perform additional checks
+        if (!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))) {
 
+            // Check the type of the first child node
             if (method.getNumChildren() > 0) {
                 JmmNode node = method.getChildren().get(0);
-
                 Type nodeType = TypeUtils.getExprType(node, table);
+
+                // Check if the method belongs to a superclass or imported class
                 if (table.getSuper() != null && table.getImports() != null) {
                     if (table.getSuper().contains(nodeType.getName()) || table.getImports().contains(nodeType.getName())) {
                         return null;
@@ -696,6 +700,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
             } else if (table.getClassName().equals(method.get("value"))) {
                 return null;
             }
+
+            // If method is called on an instance type that belongs to an imported class
             if (method.getKind().equals("MethodCall")) {
                 JmmNode rhsNode = method.getChildren().get(0);
                 Type rhsNodeType = TypeUtils.getExprType(rhsNode, table);
@@ -703,9 +709,13 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     return null;
                 }
             }
-            if (table.getImports().contains(method.getJmmChild(0).get("name"))){
+
+            // If method is found in imports
+            if (table.getImports().contains(method.getJmmChild(0).get("name"))) {
                 return null;
             }
+
+            // Report an error if the method is not declared
             String message = "Method not declared";
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -717,6 +727,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         return null;
     }
+
 
 
 
