@@ -1,0 +1,17 @@
+import A;
+
+class B {
+
+    int foo(){
+    return 1;
+    }
+
+    int bar(){
+     B b;
+     A a;
+     boolean c;
+     b = new B();
+     c = a.foo();
+     return 0;
+    }
+}

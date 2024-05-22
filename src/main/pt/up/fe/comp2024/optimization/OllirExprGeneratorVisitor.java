@@ -210,7 +210,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 code.append("invokevirtual(");
                 if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
                     code.append(node.getJmmChild(0).get("name")).append(".");
-                    code.append(table.getClassName());
+                    code.append(TypeUtils.getExprType(node.getJmmChild(0), table).getName());
                 } else if (node.getJmmChild(0).getKind().equals("This")){
                     code.append("this").append(".");
                     code.append(table.getClassName());
