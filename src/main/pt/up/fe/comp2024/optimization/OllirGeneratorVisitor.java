@@ -178,8 +178,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         String currentMethod = node.get("name");
         StringBuilder code = new StringBuilder(".method ");
 
-        // public
         if (currentMethod.equals("main")) {
+            code.append("public ");
+        }
+
+        // public
+        if (node.getAttributes().contains("isPublic")) {
             code.append("public ");
         }
 

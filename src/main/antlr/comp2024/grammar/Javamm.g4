@@ -54,7 +54,7 @@ returnStatement
     ;
 
 methodDecl
-    : ('public')? (isStatic='static')? type name=(ID | 'main' | 'length')  LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* returnStatement RCURLY #MethodDeclaration
+    : (isPublic='public')? (isStatic='static')? type name=(ID | 'main' | 'length')  LPAREN ( param ( ',' param )* )? RPAREN LCURLY ( varDeclaration )* ( statement )* returnStatement RCURLY #MethodDeclaration
     | ('public')? 'static'  type name='main' LPAREN mainParam aname=ID RPAREN LCURLY ( varDeclaration )* ( statement )* RCURLY #MethodDeclaration
     ;
 
