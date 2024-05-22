@@ -545,23 +545,24 @@ public class JasminGenerator {
 
     private String getClassNameForElementType(ClassType classType) {
         ClassUnit classUnit = ollirResult.getOllirClass();
-        String name = classUnit.getClassName();
-        if (classUnit.getClassName().equals(classType.getName()))
+        String name = null;
+
+        if (classUnit.getClassName().equals(classType.getName())) {
             name = classUnit.getClassName();
-        else {
-            for (var imprt : classUnit.getImports()) {
-                var imprtSplit = imprt.split("\\.");
-                if (imprtSplit[imprtSplit.length-1].equals(classType.getName())) {
+        } else {
+            for (String imprt : classUnit.getImports()) {
+                String[] imprtSplit = imprt.split("\\.");
+                if (imprtSplit[imprtSplit.length - 1].equals(classType.getName())) {
                     name = imprt;
+                    break;
                 }
             }
         }
 
+        if (name == null) {
+            name = classType.getName(); // fallback to the simple name if not found in imports
+        }
 
-//        switch (type.getTypeOfElement()){
-//            case CLASS, OBJECTREF, THIS -> classUnit = ollirResult.getOllirClass();
-//            default -> throw new IllegalArgumentException("Unsupported return type: " + type.getTypeOfElement());
-//        }
         return name.replace('.', '/') + ";";
     }
 
