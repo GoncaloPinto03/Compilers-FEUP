@@ -40,6 +40,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
         addVisit(Kind.BINARY_EXPR, this::visitBinaryExpr);
+        addVisit(Kind.BINARY_EXPR_AND, this::visitBinaryExprAnd);
         addVisit(Kind.NEGATION, this::visitNegation);
         addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
         addVisit(Kind.IMPORT_DECL, this::visitImportDecl);
@@ -586,6 +587,62 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
     private Void visitBinaryExpr(JmmNode node, SymbolTable table) {
+        JmmNode leftExpr = node.getChild(0);
+        JmmNode rightExpr = node.getChild(1);
+
+        Type leftType = TypeUtils.getExprType(leftExpr, table);
+        Type rightType = TypeUtils.getExprType(rightExpr, table);
+
+        // Get the operator type to handle different binary operations
+        String operator = node.get("op");
+
+        if (leftType == null || rightType == null) {
+            // If either type is null, we can't do type checking
+            return null;
+        }
+
+        boolean isIntOperation = operator.equals("+") || operator.equals("-") ||
+                operator.equals("*") || operator.equals("/") ||
+                operator.equals("%") || operator.equals("<") ||
+                operator.equals(">") || operator.equals("<=") ||
+                operator.equals(">=");
+
+        boolean isBooleanOperation = operator.equals("&&") || operator.equals("||");
+
+        if (isIntOperation) {
+            if (!leftType.getName().equals("int") || !rightType.getName().equals("int") || leftType.isArray() || rightType.isArray()) {
+                String message = "The type of operand of binary expression is not compatible with the integer operation.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(node),
+                        NodeUtils.getColumn(node),
+                        message, null)
+                );
+            }
+        } else if (isBooleanOperation) {
+            if (!leftType.getName().equals("boolean") || !rightType.getName().equals("boolean")) {
+                String message = "The type of operand of binary expression is not compatible with the boolean operation.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(node),
+                        NodeUtils.getColumn(node),
+                        message, null)
+                );
+            }
+        } else {
+            String message = "Unknown binary operation.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+
+        return null;
+    }
+
+    private Void visitBinaryExprAnd(JmmNode node, SymbolTable table) {
         JmmNode leftExpr = node.getChild(0);
         JmmNode rightExpr = node.getChild(1);
 
