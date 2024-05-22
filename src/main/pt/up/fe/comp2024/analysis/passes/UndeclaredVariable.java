@@ -23,6 +23,8 @@ import java.util.*;
 public class UndeclaredVariable extends AnalysisVisitor {
 
     private String currentMethod;
+    private Set<String> declaredFields = new HashSet<>();
+
 
     @Override
     public void buildVisitor() {
@@ -41,6 +43,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit("String", this::dealWithType);
         addVisit("Double", this::dealWithType);
         addVisit("Boolean", this::dealWithType);
+        addVisit("ClassDeclaration", this::dealClassDecl);
         addVisit("Int", this::dealWithType);
         addVisit("Integer", this::dealWithType);
         addVisit("Id", this::dealWithType);
@@ -63,6 +66,24 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     NodeUtils.getColumn(node),
                     message, null)
             );
+        }
+        return null;
+    }
+
+    private Void dealClassDecl(JmmNode node, SymbolTable table){
+        for (JmmNode field : node.getChildren("VarDeclaration")) {
+            String fieldName = field.get("name");
+            if (declaredFields.contains(fieldName)) {
+                String message = "Duplicate field declaration: " + fieldName;
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(field),
+                        NodeUtils.getColumn(field),
+                        message, null)
+                );
+            } else {
+                declaredFields.add(fieldName);
+            }
         }
         return null;
     }
@@ -168,20 +189,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         currentMethod = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
         Set <String> paramsSet = new HashSet<>();
-        Set<String> declaredMethods = new HashSet<>();
 
-        if (declaredMethods.contains(currentMethod)) {
-            String message = "Duplicate method declaration: " + currentMethod;
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(method),
-                    NodeUtils.getColumn(method),
-                    message, null)
-            );
-            return null;
-        } else {
-            declaredMethods.add(currentMethod);
-        }
 
         for (JmmNode param : params) {
             if (paramsSet.contains(param.get("name"))) {
