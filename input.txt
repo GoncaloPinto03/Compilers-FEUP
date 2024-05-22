@@ -1,19 +1,6 @@
-import imp.Obj;
+class Varargs {
 
-
-class Test {
-    int intField;
-    Obj test;
-
-    public static void main(String[] args) {
-    }
-
-
-    public Obj foo(Obj obj) {
-        Test a;
-        a = new Test();
-        test = new Obj();
-        (new Obj()).foo();
-        return obj;
+    public int varargs(int... a, int b) {
+        return a[0];
     }
 }
