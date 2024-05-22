@@ -109,6 +109,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
         } else {
             localVariables.add(varName);
         }
+
+        JmmNode varNode = node.getChild(0);
+        if ("VARARG".equals(varNode.getKind())) {
+            String message = "Invalid variable declaration: varargs cannot be used in locals";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
         return null;
     }
 

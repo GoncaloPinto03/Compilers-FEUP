@@ -2,6 +2,6 @@ class Teste {
     public static void main(String[] args) {
         int x;
         int y;
-        int x; // Esta é uma declaração de variável local duplicada
+        int... b;
     }
 }
