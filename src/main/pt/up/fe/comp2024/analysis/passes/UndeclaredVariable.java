@@ -183,6 +183,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitThisExpr (JmmNode node, SymbolTable table){
+        if (isCurrentMethodStatic || "main".equals(currentMethod)) {
+            String message = "Invalid use of 'this' in a static context.";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message,
+                    null)
+            );
+            return null;
+        }
         node.put("type", table.getClassName());
         return null;
     }
