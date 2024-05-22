@@ -24,6 +24,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private String currentMethod;
     private Set<String> declaredFields = new HashSet<>();
+    private Set<String> declaredMethods = new HashSet<>();
 
 
     @Override
@@ -187,8 +188,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
+        String methodName = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
         Set <String> paramsSet = new HashSet<>();
+
+        if (declaredMethods.contains(methodName)) {
+            String message = "Duplicate method declaration: " + methodName;
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    message, null)
+            );
+        } else {
+            declaredMethods.add(methodName);
+        }
 
 
         for (JmmNode param : params) {

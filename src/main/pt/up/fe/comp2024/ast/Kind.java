@@ -21,6 +21,8 @@ public enum Kind {
 
     PARENTESIS,
 
+    VAR_DECL,
+
     NEW_OBJECT,
 
     IDENTIFIER,
