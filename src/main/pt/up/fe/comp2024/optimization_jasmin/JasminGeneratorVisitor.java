@@ -61,8 +61,8 @@ public class JasminGeneratorVisitor extends AJmmVisitor<Void, String> {
         var className = table.getClassName();
         code.append(".class ").append(className).append(NL).append(NL);
 
-        // TODO: Hardcoded to Object, needs to be expanded
-        code.append(".super java/lang/Object").append(NL);
+        String superClass = classDecl.getClass().getSuperclass() != null ? classDecl.getClass().getSuperclass().toString() : "java/lang/Object";
+        code.append(".super ").append(superClass).append(NL);
 
         // generate a single constructor method
         var defaultConstructor = """
