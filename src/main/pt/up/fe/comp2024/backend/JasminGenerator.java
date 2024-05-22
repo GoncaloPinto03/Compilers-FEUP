@@ -499,7 +499,7 @@ public class JasminGenerator {
             return "[" + decideElementTypeForParamOrField(aType.getElementType());
         }
         if (type instanceof ClassType cType) {
-            return "L" + getClassNameForElementType(type);
+            return "L" + getClassNameForElementType(cType);
         }
 
 
