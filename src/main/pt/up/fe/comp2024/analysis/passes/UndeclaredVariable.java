@@ -28,6 +28,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Set<String> importedClasses = new HashSet<>();
 
+    private Set<String> localVariables = new HashSet<>();
+
     private boolean isCurrentMethodStatic;
 
 
@@ -59,6 +61,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.THIS, this::visitThisExpr);
         addVisit("IfStm", this::visitIfStm);
         addVisit("WhileStm", this::visitWhileStm);
+        addVisit(Kind.VAR_DECL, this::visitVarDeclaration);
     }
 
 
@@ -89,6 +92,22 @@ public class UndeclaredVariable extends AnalysisVisitor {
             );
         } else {
             importedClasses.add(importName);
+        }
+        return null;
+    }
+
+    private Void visitVarDeclaration (JmmNode node, SymbolTable table){
+        String varName = node.get("name");
+        if (localVariables.contains(varName)) {
+            String message = "Duplicate variable declaration: " + varName;
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        } else {
+            localVariables.add(varName);
         }
         return null;
     }
@@ -235,6 +254,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         String methodName = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
         Set <String> paramsSet = new HashSet<>();
+        localVariables.clear();
 
         if(method.getAttributes().contains("isStatic")){
             isCurrentMethodStatic = true;
