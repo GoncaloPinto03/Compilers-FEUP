@@ -93,12 +93,12 @@ public class JasminGenerator {
         code.append(".super ").append(superclass).append(NL);
 
         for (var field : classUnit.getFields()) {
-            String fieldType = "";
-            String fieldTypeJasmin = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
-            if (field.getFieldType().getTypeOfElement().equals(ElementType.ARRAYREF)) {
-                fieldType += "[" + (ArrayType)field.getFieldType();
-                fieldTypeJasmin = fieldType;
-            }
+//            String fieldType = "";
+            String fieldTypeJasmin = decideElementTypeForParamOrField(field.getFieldType());
+//            if (field.getFieldType().getTypeOfElement().equals(ElementType.ARRAYREF)) {
+//                fieldType += "[" + (ArrayType)field.getFieldType();
+//                fieldTypeJasmin = fieldType;
+//            }
 
 
 
@@ -173,7 +173,7 @@ public class JasminGenerator {
 
         // traverse method parameters
         for (Element argument : method.getParams()) {
-            String elementType = decideElementTypeForParamOrField(argument.getType().getTypeOfElement());
+            String elementType = decideElementTypeForParamOrField(argument.getType());
 
 //            if (argument.getType().getTypeOfElement().toString().equals("STRING"))
 //                elementType = "Ljava/lang/String;";
@@ -185,7 +185,7 @@ public class JasminGenerator {
 
         code.append(")");
 
-        var returnType = decideElementTypeForParamOrField(method.getReturnType().getTypeOfElement());
+        var returnType = decideElementTypeForParamOrField(method.getReturnType());
 
 //        if (method.getReturnType().getTypeOfElement().toString().equals("STRING"))
 //            returnType = "Ljava/lang/String;";
@@ -362,13 +362,13 @@ public class JasminGenerator {
 
         code.append("(");
         for (Element element : callInstruction.getArguments()) {
-            var elementType = element.getType().getTypeOfElement();
-            decideReturnTypeForInvokeOrPutGetField(code, elementType);
+            var elementType = element.getType();
+            code.append(decideElementTypeForParamOrField(elementType));
         }
         code.append(")");
 
-        var returnType = callInstruction.getReturnType().getTypeOfElement();
-        decideReturnTypeForInvokeOrPutGetField(code, returnType);
+        var returnType = callInstruction.getReturnType();
+        code.append(decideElementTypeForParamOrField(returnType));
 
         return code.append("\n").toString();
     }
@@ -389,13 +389,13 @@ public class JasminGenerator {
 
         code.append("(");
         for (Element element : callInstruction.getArguments()) {
-            var elementType = element.getType().getTypeOfElement();
-            decideReturnTypeForInvokeOrPutGetField(code, elementType);
+            var elementType = element.getType();
+            code.append(decideElementTypeForParamOrField(elementType));
         }
         code.append(")");
 
-        var returnType = callInstruction.getReturnType().getTypeOfElement();
-        decideReturnTypeForInvokeOrPutGetField(code, returnType);
+        var returnType = callInstruction.getReturnType();
+        code.append(decideElementTypeForParamOrField(returnType));
 
         return code.append("\n").toString();
     }
@@ -414,13 +414,13 @@ public class JasminGenerator {
 
         code.append("(");
         for (Element element : callInstruction.getArguments()) {
-            var elementType = element.getType().getTypeOfElement();
-            decideReturnTypeForInvokeOrPutGetField(code, elementType);
+            var elementType = element.getType();
+            code.append(decideElementTypeForParamOrField(elementType));
         }
         code.append(")");
 
-        var returnType = callInstruction.getReturnType().getTypeOfElement();
-        decideReturnTypeForInvokeOrPutGetField(code, returnType);
+        var returnType = callInstruction.getReturnType();
+        code.append(decideElementTypeForParamOrField(returnType));
 
         return code.append("\n").toString();
     }
@@ -443,13 +443,13 @@ public class JasminGenerator {
 
         code.append("(");
         for (Element element : callInstruction.getArguments()) {
-            var elementType = element.getType().getTypeOfElement();
-            decideReturnTypeForInvokeOrPutGetField(code, elementType);
+            var elementType = element.getType();
+            code.append(decideElementTypeForParamOrField(elementType));
         }
         code.append(")").append(" ").append(numArgs + 1); // +1 to include "this"
 
-        var returnType = callInstruction.getReturnType().getTypeOfElement();
-        decideReturnTypeForInvokeOrPutGetField(code, returnType);
+        var returnType = callInstruction.getReturnType();
+        code.append(decideElementTypeForParamOrField(returnType));
 
         return code.append("\n").toString();
     }
@@ -463,7 +463,7 @@ public class JasminGenerator {
         code.append(generators.apply(putFieldInstruction.getOperands().get(0))).append(generators.apply(putFieldInstruction.getOperands().get(2)));
         code.append("putfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
 
-        decideReturnTypeForInvokeOrPutGetField(code, field.getType().getTypeOfElement());
+        code.append(decideElementTypeForParamOrField(field.getType()));
         return code.toString();
     }
 
@@ -476,44 +476,51 @@ public class JasminGenerator {
         code.append(generators.apply(getFieldInstruction.getOperands().get(0)));
         code.append("getfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
 
-        decideReturnTypeForInvokeOrPutGetField(code, field.getType().getTypeOfElement());
+        code.append(decideElementTypeForParamOrField(field.getType()));
         return code.append("\n").toString();
     }
 
-    private void decideReturnTypeForInvokeOrPutGetField(StringBuilder code, ElementType returnType) {
-        switch (returnType) {
-            case INT32 -> code.append("I");
-            case BOOLEAN -> code.append("Z");
-            case VOID -> code.append("V");
-            case STRING -> code.append("Ljava/lang/String;");
-            case ARRAYREF -> code.append("[");
-            case CLASS, THIS, OBJECTREF -> {
-                String className = getClassNameForElementType(returnType);
-                code.append("L").append(className).append(";");
-            }
-        }
-    }
+//    private void decideReturnTypeForInvokeOrPutGetField(StringBuilder code, ElementType returnType) {
+//        switch (returnType) {
+//            case INT32 -> code.append("I");
+//            case BOOLEAN -> code.append("Z");
+//            case VOID -> code.append("V");
+//            case STRING -> code.append("Ljava/lang/String;");
+//            case ARRAYREF -> code.append("[");
+//            case CLASS, THIS, OBJECTREF -> {
+//                String className = getClassNameForElementType(returnType);
+//                code.append("L").append(className).append(";");
+//            }
+//        }
+//    }
 
-    private String decideElementTypeForParamOrField(ElementType elementType) {
-        return switch (elementType) {
-            case ARRAYREF -> "[Ljava/lang/String;"; // adicionar tipo do array
+    private String decideElementTypeForParamOrField(Type type) {
+        if (type instanceof ArrayType aType) {
+            return "[" + decideElementTypeForParamOrField(aType.getElementType());
+        }
+        if (type instanceof ClassType cType) {
+            return "L" + getClassNameForElementType(type);
+        }
+
+
+        return switch (type.getTypeOfElement()) {
             case INT32 -> "I";
             case BOOLEAN -> "Z";
             case STRING -> "Ljava/lang/String;";
-            case CLASS, OBJECTREF, THIS -> {    // L + classname
-                String className = getClassNameForElementType(elementType);
-                yield "L" + className + ";";
-            }
+//            case CLASS, OBJECTREF, THIS -> {    // L + classname
+//                String className = getClassNameForElementType(elementType);
+//                yield "L" + className + ";";
+//            }
             case VOID -> "V";
-            default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
+            default -> throw new IllegalArgumentException("Unsupported return type: " + type.getTypeOfElement());
         };
     }
 
-    private String getClassNameForElementType(ElementType elementType) {
+    private String getClassNameForElementType(Type type) {
         ClassUnit classUnit;
-        switch (elementType){
+        switch (type.getTypeOfElement()){
             case CLASS, OBJECTREF, THIS -> classUnit = ollirResult.getOllirClass();
-            default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
+            default -> throw new IllegalArgumentException("Unsupported return type: " + type.getTypeOfElement());
         }
         return classUnit.getClassName().replace('.', '/');
     }
