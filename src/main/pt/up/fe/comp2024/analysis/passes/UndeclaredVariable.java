@@ -40,6 +40,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
         addVisit(Kind.BINARY_EXPR, this::visitBinaryExpr);
+        addVisit(Kind.BINARY_EXPR_AND, this::visitBinaryExpr);
         addVisit(Kind.NEGATION, this::visitNegation);
         addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
         addVisit(Kind.IMPORT_DECL, this::visitImportDecl);
@@ -279,6 +280,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
         List<JmmNode> params=method.getChildren("ParamDeclaration");
         Set <String> paramsSet = new HashSet<>();
         localVariables.clear();
+
+        Type retType = table.getReturnType(currentMethod);
+        if(retType.getName().equals("VARARG")){
+            String message = "Invalid return type: cannot return VARARG";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    message, null)
+            );
+        }
 
         if(method.getAttributes().contains("isStatic")){
             isCurrentMethodStatic = true;

@@ -49,6 +49,7 @@ public class TypeUtils {
 
         return switch (kind) {
             case BINARY_EXPR -> getBinExprType(expr);
+            case BINARY_EXPR_AND -> getBinExprType(expr);
             case VAR_REF_EXPR -> getVarExprType(expr, table);
             case INTEGER_LITERAL -> new Type(INT_TYPE_NAME, false);
             case IDENTIFIER, NEGATION -> new Type("boolean", false);
