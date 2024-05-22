@@ -77,6 +77,7 @@ public class JasminGenerator {
 
         // generate class name
         var className = classUnit.getClassName();
+        className.replace('.', '/');
         var classType = switch (classUnit.getClassAccessModifier()) {
             case PUBLIC, DEFAULT -> "public ";
             case PRIVATE -> "private ";
@@ -357,7 +358,7 @@ public class JasminGenerator {
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
         code.append(generators.apply(callInstruction.getOperands().get(0)));
-        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName()).append("/<init>");
+        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName().replace('.', '/')).append("/<init>");
 
         code.append("(");
         for (Element element : callInstruction.getArguments()) {
@@ -482,7 +483,7 @@ public class JasminGenerator {
     private void decideReturnTypeForInvokeOrPutGetField(StringBuilder code, ElementType returnType) {
         switch (returnType) {
             case INT32 -> code.append("I");
-            case BOOLEAN -> code.append("B");
+            case BOOLEAN -> code.append("Z");
             case VOID -> code.append("V");
             case STRING -> code.append("Ljava/lang/String;");
             case ARRAYREF -> code.append("[");
@@ -511,12 +512,10 @@ public class JasminGenerator {
     private String getClassNameForElementType(ElementType elementType) {
         ClassUnit classUnit;
         switch (elementType){
-            case CLASS -> classUnit = ollirResult.getOllirClass();
-            case OBJECTREF -> classUnit = ollirResult.getOllirClass();
-            case THIS -> classUnit = ollirResult.getOllirClass();
+            case CLASS, OBJECTREF, THIS -> classUnit = ollirResult.getOllirClass();
             default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
         }
-        return classUnit.getClassName();
+        return classUnit.getClassName().replace('.', '/');
     }
 
 }
