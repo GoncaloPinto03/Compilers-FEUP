@@ -26,6 +26,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
     private Set<String> declaredFields = new HashSet<>();
     private Set<String> declaredMethods = new HashSet<>();
 
+    private boolean isCurrentMethodStatic;
+
+
 
     @Override
     public void buildVisitor() {
@@ -192,6 +195,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
         List<JmmNode> params=method.getChildren("ParamDeclaration");
         Set <String> paramsSet = new HashSet<>();
 
+        isCurrentMethodStatic = method.hasAttribute("isStatic") && !method.get("isStatic").isEmpty();
+
+
         if (declaredMethods.contains(methodName)) {
             String message = "Duplicate method declaration: " + methodName;
             addReport(Report.newError(
@@ -288,6 +294,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
         // Check if the variable is a field
         if (table.getFields().stream()
                 .anyMatch(field -> field.getName().equals(varRefName))) {
+            if(isCurrentMethodStatic){
+                String message = "Cannot access non-static field from static method";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(varRefExpr),
+                        NodeUtils.getColumn(varRefExpr),
+                        message,
+                        null)
+                );
+            }
             return null; // Variable is a field, return
         }
 

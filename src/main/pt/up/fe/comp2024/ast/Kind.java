@@ -40,6 +40,8 @@ public enum Kind {
     ARRAY_DECLARATION,
     TYPE,
     METHOD_DECL,
+
+    IMPORT_DECL,
     ASSIGN_STMT,
     RETURN_STMT,
     BINARY_EXPR,
@@ -54,7 +56,6 @@ public enum Kind {
     NEW_CLASS,
 
     CONSTRUCTOR,
-    IMPORT_DECL,
     VAR_DECLARATION,
 
     IF_STM,
