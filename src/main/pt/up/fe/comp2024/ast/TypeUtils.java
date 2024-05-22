@@ -139,8 +139,15 @@ public class TypeUtils {
         if (Objects.equals(classType.getName(), "this") || Objects.equals(classType.getName(), table.getClassName())) {
             return table.getReturnType(methodName);
         } else {
-            if (!importedClass(classType.getName(), table)) {
-                return null;
+//            if (!importedClass(classType.getName(), table)) {
+//                return null;
+//            }
+            for (String importDecl : table.getImports()) {
+                String[] segments = importDecl.split("\\.");
+                if (segments[segments.length - 1].equals(classType.getName())) {
+                    return classType;
+                }
+
             }
             return new Type("undefined", false);
         }

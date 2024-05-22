@@ -1,6 +1,17 @@
-class Varargs {
+import A;
 
-    public int varargs(int... a, int b) {
-        return a[0];
+class B {
+
+    int foo(){
+    return 1;
+    }
+
+    int bar(){
+     B b;
+     A a;
+     boolean c;
+     b = new B();
+     c = a.foo();
+     return 0;
     }
 }

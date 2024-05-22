@@ -106,7 +106,8 @@ expression
     | expression op=('+' | '-') expression #BinaryExpr
     | expression op=('<' | '>') expression #BinaryExpr
     | expression op=('==' | '!=' | '<=' | '>=' | '+=' | '-=' | '*=' | '/=') expression #BinaryExpr
-    | expression op=('&&' | '||') expression #BinaryExpr
+    | expression op='||' expression #BinaryExprOr
+    | expression op='&&' expression #BinaryExprAnd
     | LRECT ( expression ( ',' expression )* )? RRECT # ArrayLiteral
     | value=INT #IntegerLiteral
     | value='true' #Identifier

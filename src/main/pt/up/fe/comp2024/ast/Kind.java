@@ -66,6 +66,8 @@ public enum Kind {
 
     EXPR_STMT,
 
+    BINARY_EXPR_AND,
+
     VAR_REF_EXPR, MAIN_DECL();
 
 

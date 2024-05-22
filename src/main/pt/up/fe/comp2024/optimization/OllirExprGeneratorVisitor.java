@@ -42,6 +42,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(EXPR_STMT, this::visitExprStmt);
         addVisit(LENGTH, this::visitLength);
         addVisit(ARRAY_ACCESS, this::visitArrayAccess);
+        addVisit(BINARY_EXPR_AND, this::visitBinExprAnd);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -97,6 +98,53 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 .append(rhsCode).append(END_STMT);
 
         return new OllirExprResult(code, computation);
+    }
+
+    private OllirExprResult visitBinExprAnd(JmmNode node, Void unused) {
+        var lhs = visit(node.getJmmChild(0));
+        var rhs = OllirExprResult.EMPTY;
+        if (node.getNumChildren() > 1) {
+            rhs = visit(node.getJmmChild(1));
+        }
+
+        StringBuilder computation = new StringBuilder();
+
+        // code to compute the children
+        computation.append(lhs.getComputation());
+        computation.append(rhs.getComputation());
+
+        // Generate temporary variables for complex expressions if necessary
+        String lhsCode = lhs.getCode();
+        if (lhsCode.contains("invokevirtual") || lhsCode.contains("invokestatic")) {
+            String lhsTemp = OptUtils.getTemp() + OptUtils.toOllirType(node.getJmmChild(0));
+            computation.append(lhsTemp).append(SPACE)
+                    .append(ASSIGN).append(OptUtils.toOllirType(node.getJmmChild(0))).append(SPACE)
+                    .append(lhsCode);
+            lhsCode = lhsTemp;
+        }
+
+        String rhsCode = rhs.getCode();
+        if (rhsCode.contains("invokevirtual") || rhsCode.contains("invokestatic")) {
+            String rhsTemp = OptUtils.getTemp() + OptUtils.toOllirType(table.getReturnType(node.getJmmChild(1).get("value")));
+            computation.append(rhsTemp).append(SPACE)
+                    .append(ASSIGN).append(OptUtils.toOllirType(table.getReturnType(node.getJmmChild(1).get("value")))).append(SPACE)
+                    .append(rhsCode);
+            rhsCode = rhsTemp;
+        }
+        StringBuilder aux = new StringBuilder();
+
+        aux.append("if(");
+        aux.append(lhsCode);
+        aux.append(") goto ").append(OptUtils.getAndTrue()).append(";\n");
+        aux.append(OptUtils.getTemp()).append(".bool").append(ASSIGN).append(".bool 0.bool").append(";\n");
+        aux.append("goto ").append(OptUtils.getAndEnd()).append(";\n");
+        aux.append(OptUtils.getCurrentAndTrue()).append(":\n");
+        aux.append(computation);
+        aux.append(OptUtils.getCurrentTemp()).append(".bool").append(ASSIGN).append(rhsCode).append(END_STMT);
+        aux.append(OptUtils.getCurrentAndEnd()).append(":\n");
+
+        return new OllirExprResult(aux.toString());
+
     }
 
     private OllirExprResult visitAssignStmt(JmmNode node, Void unused) {
