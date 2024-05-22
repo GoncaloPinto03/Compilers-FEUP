@@ -295,20 +295,10 @@ public class UndeclaredVariable extends AnalysisVisitor {
         // Check if exists a parameter or variable declaration with the same name as the variable reference
         var varRefName = varRefExpr.get("name");
 
-        // Check if the variable is a field
-        if (table.getFields().stream()
-                .anyMatch(field -> field.getName().equals(varRefName))) {
-            if(isCurrentMethodStatic){
-                String message = "Cannot access non-static field from static method";
-                addReport(Report.newError(
-                        Stage.SEMANTIC,
-                        NodeUtils.getLine(varRefExpr),
-                        NodeUtils.getColumn(varRefExpr),
-                        message,
-                        null)
-                );
-            }
-            return null; // Variable is a field, return
+        // Check if the variable is a local variable
+        if (table.getLocalVariables(currentMethod).stream()
+                .anyMatch(varDecl -> varDecl.getName().equals(varRefName))) {
+            return null; // Variable is a local variable, return
         }
 
         // Check if the variable is a parameter
@@ -317,11 +307,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null; // Variable is a parameter, return
         }
 
-        // Check if the variable is a local variable
-        if (table.getLocalVariables(currentMethod).stream()
-                .anyMatch(varDecl -> varDecl.getName().equals(varRefName))) {
-            return null; // Variable is a local variable, return
+        // Check if the variable is a field
+        if (table.getFields().stream().anyMatch(field -> field.getName().equals(varRefName))) {
+            if (isCurrentMethodStatic) {
+                String message = "Cannot access instance field '" + varRefName + "' from static method '" + currentMethod + "'.";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(varRefExpr),
+                        NodeUtils.getColumn(varRefExpr),
+                        message,
+                        null)
+                );
+            }
+            return null; // Variável é um campo, retornar
         }
+
 
         // Check if the variable is an imported class or package
         if (table.getImports().stream()
