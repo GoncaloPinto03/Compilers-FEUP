@@ -265,6 +265,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                         NodeUtils.getColumn(method),
                         message, null)
                 );
+                return null;
             }
             var pos = 0;
             for (var paramsAux : method.getChildren("ParamDeclaration")) {
@@ -272,7 +273,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     pos = method.getChildren().indexOf(paramsAux)-1;
                 }
             }
-            JmmNode lastParamNode = method.getChild(method.getChildren().size()-1);
+            //JmmNode lastParamNode = method.getChild(method.getChildren().size()-1);
             if (method.getChildren("ParamDeclaration").size() - 1 != pos) {
                 String message = "Vararg must be the last parameter";
                 addReport(Report.newError(
@@ -283,17 +284,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
                 );
                 return null;
             }
-            if (!lastParamNode.getChild(0).getKind().equals("VARARG") && !lastParamNode.getChild(0).getKind().equals("ArrayAccess") ) {
 
-                String message = "Vararg must be the last parameter";
-                addReport(Report.newError(
-                        Stage.SEMANTIC,
-                        NodeUtils.getLine(method),
-                        NodeUtils.getColumn(method),
-                        message, null)
-                );
-
-            }
         }
 
         // check if method is imported or extemded
