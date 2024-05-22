@@ -168,7 +168,20 @@ public class UndeclaredVariable extends AnalysisVisitor {
         currentMethod = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
         Set <String> paramsSet = new HashSet<>();
-        Set <String> methodsSet = new HashSet<>();
+        Set<String> declaredMethods = new HashSet<>();
+
+        if (declaredMethods.contains(currentMethod)) {
+            String message = "Duplicate method declaration: " + currentMethod;
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    message, null)
+            );
+            return null;
+        } else {
+            declaredMethods.add(currentMethod);
+        }
 
         for (JmmNode param : params) {
             if (paramsSet.contains(param.get("name"))) {
@@ -183,18 +196,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
             paramsSet.add(param.get("name"));
         }
 
-        for(JmmNode methodAux : method.getChildren("MethodCall")){
-            if(methodsSet.contains(methodAux.get("value"))){
-                String message = "Duplicate method name";
-                addReport(Report.newError(
-                        Stage.SEMANTIC,
-                        NodeUtils.getLine(methodAux),
-                        NodeUtils.getColumn(methodAux),
-                        message, null)
-                );
-            }
-            methodsSet.add(methodAux.get("value"));
-        }
 
 
         var nrVarags = params.stream().filter(
