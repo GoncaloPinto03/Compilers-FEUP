@@ -26,6 +26,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
     private Set<String> declaredFields = new HashSet<>();
     private Set<String> declaredMethods = new HashSet<>();
 
+    private Set<String> importedClasses = new HashSet<>();
+
     private boolean isCurrentMethodStatic;
 
 
@@ -645,6 +647,22 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitNewClass(JmmNode node, SymbolTable table) {
+        String className = node.get("value");
+
+        if(importedClasses.contains(className)){
+            String message = "Class is duplicated";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message,
+                    null)
+            );
+        }else{
+            importedClasses.add(className);
+        }
+
+
         if(table.getImports().stream().noneMatch(name -> name.equals(node.get("value"))) && !(node.get("value").equals(table.getClassName()))){
             String message = "Class is not defined";
             addReport(Report.newError(

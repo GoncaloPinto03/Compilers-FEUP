@@ -1,6 +1,23 @@
-class Varargs {
+import A;
+import B;
+import B;
 
-    public int varargs(int... a, int b) {
-        return a[0];
+class ObjectAssignmentPassImports {
+
+    public static void main(String[] args) {
+
+    }
+
+    public A foo() {
+        A a;
+        B b;
+
+        a = new A();
+        b = new B();
+
+        // A and B imported, assume it is correct
+        a = b;
+
+        return a;
     }
 }
