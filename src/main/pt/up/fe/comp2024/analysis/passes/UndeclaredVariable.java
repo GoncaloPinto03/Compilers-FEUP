@@ -23,6 +23,12 @@ import java.util.*;
 public class UndeclaredVariable extends AnalysisVisitor {
 
     private String currentMethod;
+    private Set<String> declaredFields = new HashSet<>();
+    private Set<String> declaredMethods = new HashSet<>();
+
+    private boolean isCurrentMethodStatic;
+
+
 
     @Override
     public void buildVisitor() {
@@ -41,6 +47,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit("String", this::dealWithType);
         addVisit("Double", this::dealWithType);
         addVisit("Boolean", this::dealWithType);
+        addVisit("ClassDeclaration", this::dealClassDecl);
         addVisit("Int", this::dealWithType);
         addVisit("Integer", this::dealWithType);
         addVisit("Id", this::dealWithType);
@@ -63,6 +70,24 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     NodeUtils.getColumn(node),
                     message, null)
             );
+        }
+        return null;
+    }
+
+    private Void dealClassDecl(JmmNode node, SymbolTable table){
+        for (JmmNode field : node.getChildren("VarDeclaration")) {
+            String fieldName = field.get("name");
+            if (declaredFields.contains(fieldName)) {
+                String message = "Duplicate field declaration: " + fieldName;
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(field),
+                        NodeUtils.getColumn(field),
+                        message, null)
+                );
+            } else {
+                declaredFields.add(fieldName);
+            }
         }
         return null;
     }
@@ -166,22 +191,44 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
+        String methodName = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
-        Set <String> fieldsName = new HashSet<>();
-        List<Symbol> fields = table.getFields();
+        Set <String> paramsSet = new HashSet<>();
 
-        for (Symbol field : fields){
-            if(!fieldsName.add(field.getName())){
-                String message = "Duplicate field name";
+        if(method.getAttributes().contains("isStatic")){
+            isCurrentMethodStatic = true;
+        } else {
+            isCurrentMethodStatic = false;
+        }
+
+
+        if (declaredMethods.contains(methodName)) {
+            String message = "Duplicate method declaration: " + methodName;
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    message, null)
+            );
+        } else {
+            declaredMethods.add(methodName);
+        }
+
+
+        for (JmmNode param : params) {
+            if (paramsSet.contains(param.get("name"))) {
+                String message = "Duplicate parameter name";
                 addReport(Report.newError(
                         Stage.SEMANTIC,
-                        NodeUtils.getLine(method),
-                        NodeUtils.getColumn(method),
+                        NodeUtils.getLine(param),
+                        NodeUtils.getColumn(param),
                         message, null)
                 );
             }
-            return null;
+            paramsSet.add(param.get("name"));
         }
+
+
 
         var nrVarags = params.stream().filter(
                 param->param.getChild(0).getKind().equals("VARARG")
@@ -251,6 +298,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
         // Check if the variable is a field
         if (table.getFields().stream()
                 .anyMatch(field -> field.getName().equals(varRefName))) {
+            if(isCurrentMethodStatic){
+                String message = "Cannot access non-static field from static method";
+                addReport(Report.newError(
+                        Stage.SEMANTIC,
+                        NodeUtils.getLine(varRefExpr),
+                        NodeUtils.getColumn(varRefExpr),
+                        message,
+                        null)
+                );
+            }
             return null; // Variable is a field, return
         }
 
@@ -579,6 +636,8 @@ public class UndeclaredVariable extends AnalysisVisitor {
         node.put("isArray", "false");
         return null;
     }
+
+
     private Void visitMethodCall (JmmNode method, SymbolTable table){
 
         if (method.getChild(0).getKind().equals("This")) {

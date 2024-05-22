@@ -92,11 +92,14 @@ public class JasminGenerator {
         code.append(".super ").append(superclass).append(NL);
 
         for (var field : classUnit.getFields()) {
-
-            String fieldType = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
-            if (fieldType.equals("[")) {    // ARRAYREF
-                fieldType += "[" + ((ArrayType) field.getFieldType()).getElementType();
+            String fieldType = "";
+            String fieldTypeJasmin = decideElementTypeForParamOrField(field.getFieldType().getTypeOfElement());
+            if (field.getFieldType().getTypeOfElement().equals(ElementType.ARRAYREF)) {
+                fieldType += "[" + (ArrayType)field.getFieldType();
+                fieldTypeJasmin = fieldType;
             }
+
+
 
             String fieldAccess = "";
             if (field.getFieldAccessModifier().name().equals("PUBLIC"))
@@ -107,7 +110,7 @@ public class JasminGenerator {
             if (field.isStaticField())
                 fieldAccess += " static";
 
-            code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldType).append(NL);
+            code.append(".field ").append(fieldAccess).append(" ").append(field.getFieldName()).append(" ").append(fieldTypeJasmin).append(NL);
         }
 
         boolean hasExplicitConstructors = classUnit.getMethods().stream()
@@ -482,9 +485,11 @@ public class JasminGenerator {
             case BOOLEAN -> code.append("B");
             case VOID -> code.append("V");
             case STRING -> code.append("Ljava/lang/String;");
-            case ARRAYREF -> code.append("[Ljava/lang/Object;");
-            case CLASS, THIS, OBJECTREF -> code.append("L").append(returnType.toString().toLowerCase()).append(";");
-//            case OBJECTREF -> code.append("L");
+            case ARRAYREF -> code.append("[");
+            case CLASS, THIS, OBJECTREF -> {
+                String className = getClassNameForElementType(returnType);
+                code.append("L").append(className).append(";");
+            }
         }
     }
 
@@ -494,10 +499,22 @@ public class JasminGenerator {
             case INT32 -> "I";
             case BOOLEAN -> "Z";
             case STRING -> "Ljava/lang/String;";
-            case CLASS, OBJECTREF, THIS -> "A"; // L classname
-//            case OBJECTREF -> "L";
+            case CLASS, OBJECTREF, THIS -> {    // L + classname
+                String className = getClassNameForElementType(elementType);
+                yield "L" + className + ";";
+            }
             case VOID -> "V";
             default -> throw new IllegalArgumentException("Unsupported return type: " + elementType);
         };
     }
+
+    private String getClassNameForElementType(ElementType elementType) {
+        // Implement your logic to retrieve the class name based on the ElementType
+        // This is a placeholder implementation and should be replaced with your actual logic
+        if (elementType == ElementType.CLASS || elementType == ElementType.OBJECTREF || elementType == ElementType.THIS) {
+            return elementType.getClass().getName(); // Replace with actual class name retrieval
+        }
+        return "";
+    }
+
 }
