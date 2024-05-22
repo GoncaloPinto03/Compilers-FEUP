@@ -1,17 +1,22 @@
-import A;
+import B.C;
 
-class B {
+class A {
 
-    int foo(){
-    return 1;
+    public static void main(String[] args) {
+        A a;
+        a.func(a.foo(), a.bar());
     }
 
-    int bar(){
-     B b;
-     A a;
-     boolean c;
-     b = new B();
-     c = a.foo();
-     return 0;
+    int foo() {
+        return 0;
     }
+
+    boolean bar() {
+        return true;
+    }
+
+    int func(int a, boolean b) {
+        return 0;
+    }
+
 }
