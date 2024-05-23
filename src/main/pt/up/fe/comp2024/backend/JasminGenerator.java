@@ -167,24 +167,11 @@ public class JasminGenerator {
         // traverse method parameters
         for (Element argument : method.getParams()) {
             String elementType = decideElementTypeForParamOrField(argument.getType());
-
-//            if (argument.getType().getTypeOfElement().toString().equals("STRING"))
-//                elementType = "Ljava/lang/String;";
-//            if (argument.getType().getTypeOfElement().toString().equals("ARRAYREF"))
-//                elementType = "[Ljava/lang/String;";
-
             code.append(elementType);
         }
-
         code.append(")");
 
         var returnType = decideElementTypeForParamOrField(method.getReturnType());
-
-//        if (method.getReturnType().getTypeOfElement().toString().equals("STRING"))
-//            returnType = "Ljava/lang/String;";
-//        if (method.getReturnType().getTypeOfElement().toString().equals("ARRAYREF"))
-//            returnType = "[Ljava/lang/String;";
-
         code.append(returnType).append(NL);
 
         // Add limits
@@ -249,7 +236,7 @@ public class JasminGenerator {
         String loadType = "";
         switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> loadType = "iload " + reg + NL;
-            case STRING, OBJECTREF -> loadType = "aload " + reg + NL;
+            case STRING, OBJECTREF, ARRAYREF, CLASS -> loadType = "aload " + reg + NL;
             case THIS -> loadType = "aload_0 " + NL;
         }
         return loadType;
@@ -337,7 +324,8 @@ public class JasminGenerator {
             case invokevirtual -> code.append(invokeVirtual(callInstruction));
             case invokestatic -> code.append(invokeStatic(callInstruction));
             case invokeinterface -> code.append(invokeInterface(callInstruction));
-            case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
+//            case arraylength -> code.append(handleArray(callInstruction));
+            case NEW -> code.append("new ").append(getClassNameForElementType((ClassType)operand.getType())).append(NL).append(NL);
         }
 
         // handle special case of VOID
@@ -375,7 +363,8 @@ public class JasminGenerator {
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
         code.append(generators.apply(callInstruction.getOperands().get(0)));
-        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName().replace('.', '/')).append("/<init>");
+        String className = getClassNameForElementType((ClassType)callInstruction.getCaller().getType());
+        code.append("invokespecial ").append(className).append("/<init>");
 
         code.append("(");
         for (Element element : callInstruction.getArguments()) {
@@ -398,10 +387,10 @@ public class JasminGenerator {
             code.append(generators.apply(op));
         }
 
-        var callerClassName = (ClassType) callInstruction.getCaller().getType();
+        var className = getClassNameForElementType((ClassType) callInstruction.getCaller().getType());
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
 
-        code.append("invokevirtual " + callerClassName.getName() + "/");
+        code.append("invokevirtual ").append(className).append("/");
         code.append(literal.getLiteral().replace("\"", ""));
 
         code.append("(");
@@ -527,7 +516,7 @@ public class JasminGenerator {
                 }
             }
         }
-        return name.replace('.', '/') + ";";
+        return name.replace('.', '/');
     }
 
 }

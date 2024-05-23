@@ -17,6 +17,7 @@ public class JasminGeneratorVisitor extends AJmmVisitor<Void, String> {
 
     private final SymbolTable table;
 
+
     private JasminExprGeneratorVisitor exprGenerator;
 
     private String currentMethod;
@@ -42,6 +43,9 @@ public class JasminGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit("MethodDecl", this::visitMethodDecl);
         addVisit("AssignStmt", this::visitAssignStmt);
         addVisit("ReturnStmt", this::visitReturnStmt);
+        addVisit("IfStmt", this::visitIfStmt); // Add visitor for IfStmt
+        addVisit("ElseStmt", this::visitElseStmt); // Add visitor for ElseStmt
+        addVisit("Type", this::visitType); // Add visitor for ElseStmt
     }
 
 
@@ -58,11 +62,15 @@ public class JasminGeneratorVisitor extends AJmmVisitor<Void, String> {
         var code = new StringBuilder();
 
         // generate class name
-        var className = table.getClassName();
-        code.append(".class ").append(className).append(NL).append(NL);
+//        var className = table.getClassName();
+//        code.append(".class ").append(className).append(NL).append(NL);
 
-        String superClass = classDecl.getClass().getSuperclass() != null ? classDecl.getClass().getSuperclass().toString() : "java/lang/Object";
-        code.append(".super ").append(superClass).append(NL);
+        // check id
+        String extendedClass = classDecl.hasAttribute("sname") ? classDecl.get("sname") : "";
+        code.append(extendedClass);
+
+//        String superClass = classDecl.getClass().getSuperclass() != null ? classDecl.getClass().getSuperclass().toString() : "java/lang/Object";
+//        code.append(".super ").append(superClass).append(NL);
 
         // generate a single constructor method
         var defaultConstructor = """
@@ -176,5 +184,48 @@ public class JasminGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append("ireturn").append(NL);
 
         return code.toString();
+    }
+
+    private String visitIfStmt(JmmNode ifStmt, Void unused) {
+        var code = new StringBuilder();
+        var condition = ifStmt.getChild(0);
+        var thenStmt = ifStmt.getChild(1);
+        var elseStmt = ifStmt.getChildren().size() > 2 ? ifStmt.getChild(2) : null;
+
+        var thenLabel = "if_true_" + System.nanoTime();
+        var elseLabel = "else_" + System.nanoTime();
+        var endLabel = "endif_" + System.nanoTime();
+
+        exprGenerator.visit(condition, code);
+
+        code.append("iflt ").append(thenLabel).append(NL);
+
+        if (elseStmt != null) {
+            code.append(visit(elseStmt));
+            code.append("goto ").append(endLabel).append(NL);
+        }
+
+        code.append(thenLabel).append(":").append(NL);
+        code.append(visit(thenStmt));
+
+        code.append(endLabel).append(":").append(NL);
+
+        return code.toString();
+    }
+
+    private String visitElseStmt(JmmNode elseStmt, Void unused) {
+        var code = new StringBuilder();
+
+        for (var stmt : elseStmt.getChildren()) {
+            var instCode = StringLines.getLines(visit(stmt)).stream()
+                    .collect(Collectors.joining(NL + TAB, TAB, NL));
+            code.append(instCode);
+        }
+
+        return code.toString();
+    }
+
+    private String visitType(JmmNode jmmNode, Void unused) {
+        return ((Boolean) jmmNode.getObject("isArray")) ? jmmNode.get("value") + "[]" : jmmNode.get("value");
     }
 }
