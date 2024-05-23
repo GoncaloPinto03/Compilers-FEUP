@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.specs.comp.ollir.OperationType.*;
+
 
 /**
  * Generates Jasmin code from an OllirResult.
@@ -54,6 +56,8 @@ public class JasminGenerator {
         generators.put(CallInstruction.class, this::generateCall);
         generators.put(PutFieldInstruction.class, this::generatePutField);
         generators.put(GetFieldInstruction.class, this::generateGetField);
+        generators.put(GotoInstruction.class, inst -> "goto " + ((GotoInstruction) inst).getLabel() + NL);
+        generators.put(CondBranchInstruction.class, this::generateCondBranch);
     }
 
     public List<Report> getReports() {
@@ -68,6 +72,29 @@ public class JasminGenerator {
         }
 
         return code;
+    }
+
+    private String generateCondBranch(CondBranchInstruction condBranchInstruction) {
+        var code = new StringBuilder();
+
+        code.append(generators.apply(condBranchInstruction.getOperands().get(0)));
+        code.append(generators.apply(condBranchInstruction.getOperands().get(1)));
+
+        ((BinaryOpInstruction) condBranchInstruction.getCondition()).getOperation().getOpType();
+
+        var op = switch (((BinaryOpInstruction) condBranchInstruction.getCondition()).getOperation().getOpType()) {
+            case LTH -> "if_icmplt";
+            case GTH -> "if_icmpgt";
+            case EQ -> "if_icmpeq";
+            case NEQ -> "if_icmpne";
+            case LTE -> "if_icmple";
+            case GTE -> "if_icmpge";
+            default -> throw new NotImplementedException(((BinaryOpInstruction) condBranchInstruction.getCondition()).getOperation().getOpType());
+        };
+
+        code.append(op).append(" ").append(condBranchInstruction.getLabel()).append(NL);
+
+        return code.toString();
     }
 
 
@@ -184,8 +211,12 @@ public class JasminGenerator {
         // Add limits
         code.append(TAB).append(".limit stack 99").append(NL);
         code.append(TAB).append(".limit locals 99").append(NL);
-
+        var label = "";
         for (var inst : method.getInstructions()) {
+            for(var labels : method.getLabels(inst)){
+                label = labels;
+                code.append(label).append(":").append(NL);
+            }
             var instCode = StringLines.getLines(generators.apply(inst)).stream()
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
@@ -233,7 +264,22 @@ public class JasminGenerator {
     }
 
     private String generateLiteral(LiteralElement literal) {
-        return "ldc " + literal.getLiteral() + NL;
+        return switch (literal.getType().getTypeOfElement()) {
+            case INT32 -> {
+                int value = Integer.parseInt(literal.getLiteral());
+                if(value>= 0 && value <= 5)
+                    yield "iconst_" + value + NL;
+                else if(value >= -128 && value <= 127)
+                    yield "bipush " + value + NL;
+                else if(value >= -32768 && value <= 32767)
+                    yield "sipush " + value + NL;
+                else
+                    yield "ldc " + value + NL;
+            }
+            case BOOLEAN -> "iconst_" + (literal.getLiteral().equals("true") ? "1" : "0") + NL;
+            case STRING -> "ldc " + literal.getLiteral() + NL;
+            default -> throw new NotImplementedException(literal.getType().getTypeOfElement());
+        };
     }
 
     private String generateOperand(Operand operand) {
