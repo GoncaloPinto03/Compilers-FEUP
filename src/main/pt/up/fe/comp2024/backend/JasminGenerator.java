@@ -168,10 +168,6 @@ public class JasminGenerator {
         for (Element argument : method.getParams()) {
             String elementType = decideElementTypeForParamOrField(argument.getType());
 
-//            if (argument.getType().getTypeOfElement().toString().equals("STRING"))
-//                elementType = "Ljava/lang/String;";
-//            if (argument.getType().getTypeOfElement().toString().equals("ARRAYREF"))
-//                elementType = "[Ljava/lang/String;";
 
             code.append(elementType);
             if (argument.getType().getTypeOfElement().equals(ElementType.OBJECTREF))
@@ -182,10 +178,6 @@ public class JasminGenerator {
 
         var returnType = decideElementTypeForParamOrField(method.getReturnType());
 
-//        if (method.getReturnType().getTypeOfElement().toString().equals("STRING"))
-//            returnType = "Ljava/lang/String;";
-//        if (method.getReturnType().getTypeOfElement().toString().equals("ARRAYREF"))
-//            returnType = "[Ljava/lang/String;";
 
         code.append(returnType).append(NL);
 
@@ -339,7 +331,14 @@ public class JasminGenerator {
             case invokevirtual -> code.append(invokeVirtual(callInstruction));
             case invokestatic -> code.append(invokeStatic(callInstruction));
             case invokeinterface -> code.append(invokeInterface(callInstruction));
-            case NEW -> code.append("new ").append(getClassNameForElementType((ClassType) operand.getType())).append(NL).append("dup").append(NL);
+            case NEW -> {
+                if(operand.getName().equals("array")) {
+                    code.append("newarray int").append(NL);
+                } else {
+                    code.append("new ").append(getClassNameForElementType((ClassType) operand.getType())).append(NL).append("dup").append(NL);
+                }
+            }
+
         }
 
         // handle special case of VOID
@@ -534,10 +533,6 @@ public class JasminGenerator {
                 }
             }
         }
-//
-//        if (name == null) {
-//            name = classType.getName(); // fallback to the simple name if not found in imports
-//        }
 
         return name.replace('.', '/');
     }
