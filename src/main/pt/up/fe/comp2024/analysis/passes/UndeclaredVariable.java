@@ -542,6 +542,17 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return  null;
         }
 
+        if(arrayNode.getKind().equals("MethodCall")){
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(array),
+                    NodeUtils.getColumn(array),
+                    "ERROR",
+                    null)
+            );
+            return null;
+        }
+
         // Check if the array node is actually an array
         if (!arrayType.isArray()){
             String message = "Invalid array access: '" + arrayNode.get("name") + "' is not an array.";
@@ -672,6 +683,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         if(rhsType == null || lhsType == null){
             return null;
         }
+
 
         if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
             return null;

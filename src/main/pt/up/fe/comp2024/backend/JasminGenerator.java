@@ -4,16 +4,14 @@ import org.specs.comp.ollir.*;
 import org.specs.comp.ollir.tree.TreeNode;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp.jmm.report.Report;
-import pt.up.fe.comp.jmm.report.ReportType;
-import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.specs.util.classmap.FunctionClassMap;
 import pt.up.fe.specs.util.exceptions.NotImplementedException;
 import pt.up.fe.specs.util.utilities.StringLines;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static org.specs.comp.ollir.CallType.*;
 
 
 /**
@@ -54,31 +52,12 @@ public class JasminGenerator {
         generators.put(BinaryOpInstruction.class, this::generateBinaryOp);
         generators.put(ReturnInstruction.class, this::generateReturn);
         generators.put(CallInstruction.class, this::generateCall);
-        generators.put(PutFieldInstruction.class, this::generatePutFieldCode);
-        generators.put(GetFieldInstruction.class, this::generateGetFieldCode);
-
-        checkSimilarImports();
+        generators.put(PutFieldInstruction.class, this::generatePutField);
+        generators.put(GetFieldInstruction.class, this::generateGetField);
     }
 
     public List<Report> getReports() {
         return reports;
-    }
-
-    private void checkSimilarImports(){
-        Set<String> classNames = new HashSet<>();
-        for (String imprt : ollirResult.getOllirClass().getImports()) {
-            String className = imprt.substring(imprt.lastIndexOf('.') + 1);
-            if (!classNames.add(className)) {
-                Report report= new Report(
-                        ReportType.ERROR,
-                        Stage.GENERATION,
-                        -1,
-                        -1,
-                        "Similar import"
-                );
-                reports.add(report);
-            }
-        }
     }
 
     public String build() {
@@ -350,26 +329,24 @@ public class JasminGenerator {
     }
 
     private String generateCall(CallInstruction callInstruction) {
-        var invokeCode = new StringBuilder();
-        Operand firstArg = (Operand) callInstruction.getOperands().get(0);
-
+        var code  = new StringBuilder();
+        var operand = (Operand) callInstruction.getOperands().get(0);
 
         switch (callInstruction.getInvocationType()) {
-            case invokespecial -> invokeCode.append(invokeSpecial(callInstruction));
-            case invokevirtual -> invokeCode.append(invokeVirtual(callInstruction));
-            case invokestatic -> invokeCode.append(invokeStatic(callInstruction));
-            case invokeinterface -> invokeCode.append(invokeInterface(callInstruction));
-            case NEW -> invokeCode.append("new ").append(firstArg.getName()).append(NL).append("dup").append(NL);
+            case invokespecial -> code.append(invokeSpecial(callInstruction));
+            case invokevirtual -> code.append(invokeVirtual(callInstruction));
+            case invokestatic -> code.append(invokeStatic(callInstruction));
+            case invokeinterface -> code.append(invokeInterface(callInstruction));
+            case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
         }
 
         // handle special case of VOID
         if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
             // Only pop if the result is not used by a subsequent instruction
             if (usesResultOf(callInstruction)) {
-                invokeCode.append("pop").append(NL);
+                code.append("pop").append(NL);
             }
-        return invokeCode.toString();
-
+        return code.toString();
     }
 
     private boolean usesResultOf(Instruction inst) {
@@ -494,51 +471,30 @@ public class JasminGenerator {
         return code.append("\n").toString();
     }
 
-    private String generatePutFieldCode(PutFieldInstruction putFieldInstruction) {
-        StringBuilder codeBuilder = new StringBuilder();
+    private String generatePutField(PutFieldInstruction putFieldInstruction) {
+        var code = new StringBuilder();
 
-        // Obtenha o tipo do chamador e o campo a ser modificado
-        ClassType callerType = (ClassType) putFieldInstruction.getOperands().get(0).getType();
-        Operand fieldOperand = (Operand) putFieldInstruction.getOperands().get(1);
+        var callerType = (ClassType) putFieldInstruction.getOperands().get(0).getType();
+        var field = (Operand) putFieldInstruction.getOperands().get(1);
 
-        // Gere o código para os operandos
-        String callerCode = generators.apply(putFieldInstruction.getOperands().get(0));
-        String valueCode = generators.apply(putFieldInstruction.getOperands().get(2));
-        codeBuilder.append(callerCode).append(valueCode);
+        code.append(generators.apply(putFieldInstruction.getOperands().get(0))).append(generators.apply(putFieldInstruction.getOperands().get(2)));
+        code.append("putfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
 
-        // Construa a instrução putfield
-        String callerTypeName = callerType.getName();
-        String fieldName = fieldOperand.getName();
-        codeBuilder.append("putfield ").append(callerTypeName).append("/").append(fieldName).append(" ");
-
-        // Adicione o tipo do campo à instrução
-        String fieldType = decideElementTypeForParamOrField(fieldOperand.getType());
-        codeBuilder.append(fieldType);
-
-        return codeBuilder.toString();
+        code.append(decideElementTypeForParamOrField(field.getType()));
+        return code.toString();
     }
 
-    private String generateGetFieldCode(GetFieldInstruction getFieldInstruction) {
-        StringBuilder codeBuilder = new StringBuilder();
+    private String generateGetField(GetFieldInstruction getFieldInstruction) {
+        var code = new StringBuilder();
 
-        // Obtenha o tipo do chamador e o campo a ser acessado
-        ClassType callerType = (ClassType) getFieldInstruction.getOperands().get(0).getType();
-        Operand fieldOperand = (Operand) getFieldInstruction.getOperands().get(1);
+        var callerType = (ClassType) getFieldInstruction.getOperands().get(0).getType();
+        var field = (Operand) getFieldInstruction.getOperands().get(1);
 
-        // Gere o código para o primeiro operando
-        String firstOperandCode = generators.apply(getFieldInstruction.getOperands().get(0));
-        codeBuilder.append(firstOperandCode);
+        code.append(generators.apply(getFieldInstruction.getOperands().get(0)));
+        code.append("getfield ").append(callerType.getName()).append("/").append(field.getName()).append(" ");
 
-        // Construa a instrução getfield
-        String callerTypeName = callerType.getName();
-        String fieldName = fieldOperand.getName();
-        codeBuilder.append("getfield ").append(callerTypeName).append("/").append(fieldName).append(" ");
-
-        // Adicione o tipo do campo à instrução
-        String fieldType = decideElementTypeForParamOrField(fieldOperand.getType());
-        codeBuilder.append(fieldType).append("\n");
-
-        return codeBuilder.toString();
+        code.append(decideElementTypeForParamOrField(field.getType()));
+        return code.append("\n").toString();
     }
 
     private String decideElementTypeForParamOrField(Type type) {
