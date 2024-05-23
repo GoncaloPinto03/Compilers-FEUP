@@ -505,7 +505,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             code.append(OptUtils.getTemp()).append(".i32").append(" := ").append(".i32");
             code.append(" arraylength(");
             code.append(visit(node.getJmmChild(0)).getCode());
-            code.append(").i32");
+            code.append(").i32").append(END_STMT);
             return new OllirExprResult(code.toString());
         } else {
             StringBuilder code = new StringBuilder();
