@@ -1,17 +1,19 @@
-import io.a;
-import io;
+import test.Exemplo;
 
-hello {
+HelloWorld {
 
-    .field public field.hello;
+    .method public foo().i32 {
 
-    .method public foo(param.a).a {
+        e.Exemplo :=.Exemplo new(Exemplo).Exemplo;
+        invokespecial(e.Exemplo, "<init>").V;
 
-        ret.a $1.param.a;
+        res.i32 :=.i32 invokevirtual(e.Exemplo, "getFunction").i32;
+
+        ret.i32 res.i32;
 
     }
 
-    .construct hello().V {
+    .construct HelloWorld().V {
         invokespecial(this, "<init>").V;
     }
 }
