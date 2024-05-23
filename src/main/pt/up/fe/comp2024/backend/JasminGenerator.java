@@ -375,7 +375,7 @@ public class JasminGenerator {
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
         code.append(generators.apply(callInstruction.getOperands().get(0)));
-        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName().replace('.', '/')).append("/<init>");
+        code.append("invokespecial ").append(getClassNameForElementType((ClassType) callInstruction.getCaller().getType())).append("/<init>");
 
         code.append("(");
         for (Element element : callInstruction.getArguments()) {
@@ -534,7 +534,7 @@ public class JasminGenerator {
 //            name = classType.getName(); // fallback to the simple name if not found in imports
 //        }
 
-        return name.replace('.', '/') + ";";
+        return name.replace('.', '/');
     }
 
 }
