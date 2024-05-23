@@ -4,6 +4,8 @@ import org.specs.comp.ollir.*;
 import org.specs.comp.ollir.tree.TreeNode;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp.jmm.report.Report;
+import pt.up.fe.comp.jmm.report.ReportType;
+import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.specs.util.classmap.FunctionClassMap;
 import pt.up.fe.specs.util.exceptions.NotImplementedException;
 import pt.up.fe.specs.util.utilities.StringLines;
@@ -67,7 +69,14 @@ public class JasminGenerator {
         for (String imprt : ollirResult.getOllirClass().getImports()) {
             String className = imprt.substring(imprt.lastIndexOf('.') + 1);
             if (!classNames.add(className)) {
-                throw new IllegalArgumentException("Duplicate import detected: " + className);
+                Report report= new Report(
+                        ReportType.ERROR,
+                        Stage.GENERATION,
+                        -1,
+                        -1,
+                        "Similar import"
+                );
+                reports.add(report);
             }
         }
     }

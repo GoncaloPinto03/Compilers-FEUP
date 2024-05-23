@@ -45,9 +45,17 @@ public class JmmSymbolTableBuilder {
 
     private static String dealWithImport(JmmNode importNode) {
         String importList = importNode.get("importValue");
-        String importStr = importList.substring(1, importList.length() - 1);
-        return String.join(".", importStr.split(", "));
+        String[] imports = importList.split(", ");
+        String lastImport = imports[imports.length - 1]; // Obtém o último elemento
+        if (lastImport.startsWith("[")) { // Verifica se o último elemento começa com '[A'
+            lastImport = lastImport.substring(1); // Remove os dois primeiros caracteres ('[A')
+        }
+        if (lastImport.endsWith("]")) { // Verifica se o último elemento termina com ']'
+            lastImport = lastImport.substring(0, lastImport.length() - 1); // Remove o último caractere (']')
+        }
+        return lastImport;
     }
+
 
     private static List<String> buildMethods(JmmNode classDecl) {
         return classDecl.getChildren(Kind.METHOD_DECLARATION).stream()

@@ -81,10 +81,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
         return null;
     }
 
-    private Void visitImportDecl (JmmNode importNode, SymbolTable table){
+    private Void visitImportDecl(JmmNode importNode, SymbolTable table) {
         String importName = importNode.get("ID");
-        if (importedClasses.contains(importName)) {
-            String message = "Duplicate import declaration: " + importName;
+
+
+        String[] importParts = importName.split("\\.");
+        String className = importParts[importParts.length - 1];
+        System.out.println(className);
+
+        if (importedClasses.contains(className)) {
+            String message = "Duplicate import declaration: " + className;
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(importNode),
@@ -92,10 +98,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     message, null)
             );
         } else {
-            importedClasses.add(importName);
+            importedClasses.add(className);
         }
         return null;
     }
+
 
     private Void visitVarDeclaration (JmmNode node, SymbolTable table){
         String varName = node.get("name");
@@ -720,7 +727,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
 
     private Void visitNewClass(JmmNode node, SymbolTable table) {
-        if(table.getImports().stream().noneMatch(name -> name.equals(node.get("value"))) && !(node.get("value").equals(table.getClassName()))){
+
+        dealClassDecl(node,table);
+
+        if (table.getImports().stream().noneMatch(name -> name.equals(node.get("value"))) &&
+                !(node.get("value").equals(table.getClassName()))) {
             String message = "Class is not defined";
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -766,6 +777,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         if(table.getMethods().contains(method.get("value"))){
             return null;
+        }
+
+        String methodName = method.get("value");
+
+        for (String importedClass : table.getImports()) {
+            // Divide o nome do import em partes usando o '.' como delimitador
+            String[] parts = importedClass.split("\\.");
+
+            // Pega apenas o último elemento da lista de partes
+            String lastPart = parts[parts.length - 1];
+
+            // Verifica se o último elemento do import é igual ao nome do método
+            if (lastPart.equals(methodName)) {
+                return null; // O último elemento do import é igual ao nome do método, não há problema
+            }
         }
 
         if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){
