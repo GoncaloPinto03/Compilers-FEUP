@@ -42,6 +42,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(EXPR_STMT, this::visitExprStmt);
         addVisit(LENGTH, this::visitLength);
         addVisit(ARRAY_ACCESS, this::visitArrayAccess);
+        addVisit(BINARY_EXPR_AND, this::visitBinExprAnd);
+        addVisit("This", this::visitThis);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -99,6 +101,53 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code, computation);
     }
 
+    private OllirExprResult visitBinExprAnd(JmmNode node, Void unused) {
+        var lhs = visit(node.getJmmChild(0));
+        var rhs = OllirExprResult.EMPTY;
+        if (node.getNumChildren() > 1) {
+            rhs = visit(node.getJmmChild(1));
+        }
+
+        StringBuilder computation = new StringBuilder();
+
+        // code to compute the children
+        computation.append(lhs.getComputation());
+        computation.append(rhs.getComputation());
+
+        // Generate temporary variables for complex expressions if necessary
+        String lhsCode = lhs.getCode();
+        if (lhsCode.contains("invokevirtual") || lhsCode.contains("invokestatic")) {
+            String lhsTemp = OptUtils.getTemp() + OptUtils.toOllirType(node.getJmmChild(0));
+            computation.append(lhsTemp).append(SPACE)
+                    .append(ASSIGN).append(OptUtils.toOllirType(node.getJmmChild(0))).append(SPACE)
+                    .append(lhsCode);
+            lhsCode = lhsTemp;
+        }
+
+        String rhsCode = rhs.getCode();
+        if (rhsCode.contains("invokevirtual") || rhsCode.contains("invokestatic")) {
+            String rhsTemp = OptUtils.getTemp() + OptUtils.toOllirType(table.getReturnType(node.getJmmChild(1).get("value")));
+            computation.append(rhsTemp).append(SPACE)
+                    .append(ASSIGN).append(OptUtils.toOllirType(table.getReturnType(node.getJmmChild(1).get("value")))).append(SPACE)
+                    .append(rhsCode);
+            rhsCode = rhsTemp;
+        }
+        StringBuilder aux = new StringBuilder();
+
+        aux.append("if(");
+        aux.append(lhsCode);
+        aux.append(") goto ").append(OptUtils.getAndTrue()).append(";\n");
+        aux.append(OptUtils.getTemp()).append(".bool").append(ASSIGN).append(".bool 0.bool").append(";\n");
+        aux.append("goto ").append(OptUtils.getAndEnd()).append(";\n");
+        aux.append(OptUtils.getCurrentAndTrue()).append(":\n");
+        aux.append(computation);
+        aux.append(OptUtils.getCurrentTemp()).append(".bool").append(ASSIGN).append(rhsCode).append(END_STMT);
+        aux.append(OptUtils.getCurrentAndEnd()).append(SPACE).append(":\n");
+
+        return new OllirExprResult(aux.toString());
+
+    }
+
     private OllirExprResult visitAssignStmt(JmmNode node, Void unused) {
         var lhs = visit(node.getJmmChild(0));
         var rhs = OllirExprResult.EMPTY;
@@ -146,77 +195,156 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code.toString(), computation);
     }
 
-
+//    private OllirExprResult visitMethodCall(JmmNode node, Void unused) {
+//
+//        StringBuilder code = new StringBuilder();
+//
+//        String functionName = node.get("value");
+//
+//        if (node.getJmmChild(0).getAttributes().contains("name")) {
+//            if (checkIfImport(node.getJmmChild(0).get("name"))) {
+//                code.append("invokestatic(");
+//                code.append(node.getJmmChild(0).get("name"));
+//            } else {
+//
+//                code.append("invokevirtual(");
+//                if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
+//                    code.append(node.getJmmChild(0).get("name")).append(".");
+//                    code.append(TypeUtils.getExprType(node.getJmmChild(0), table).getName());
+//                } else if (node.getJmmChild(0).getKind().equals("This")){
+//                    code.append("this").append(".");
+//                    code.append(table.getClassName());
+//                } else {
+//                    code.append(node.getJmmChild(0).get("value")).append(".");
+//                    code.append(table.getClassName());
+//                }
+//            }
+//        } else {
+//
+//            code.append("invokevirtual(");
+//            if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
+//                code.append(node.getJmmChild(0).get("name")).append(".");
+//                code.append(table.getClassName());
+//            } else if (node.getJmmChild(0).getKind().equals("This")){
+//                code.append("this").append(".");
+//                code.append(table.getClassName());
+//            } else {
+//                code.append(node.getJmmChild(0).get("value")).append(".");
+//                code.append(table.getClassName());
+//            }
+//        }
+//
+//        code.append(", \"");
+//        code.append(functionName);
+//        code.append("\"");
+//
+//        StringBuilder aux = new StringBuilder();
+//
+//        for (int i = 1; i < node.getNumChildren(); i++) {
+//            code.append(", ");
+//            // check if the child is a literal or a function variable
+//            if (!isVariableOrFunc(node.getJmmChild(i))) {
+//                var child = visit(node.getJmmChild(i));
+//                aux.append(child.getCode()).append(END_STMT);
+//                // append aux ate the beginning of the code
+//                code.insert(0, aux);
+//                code.append(OptUtils.getCurrentTemp()).append(".i32");
+//            } else {
+//                code.append(visit(node.getJmmChild(i)).getCode());
+//            }
+//        }
+//
+//        if (table.getReturnType(node.get("value")) != null) {
+//            code.append(")").append(OptUtils.toOllirType(table.getReturnType(functionName)));
+//        } else {
+//            code.append(").V");
+//        }
+//
+//        code.append(END_STMT);
+//
+//        return new OllirExprResult(code.toString());
+//
+//    }
 
     private OllirExprResult visitMethodCall(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
-
         String functionName = node.get("value");
+        StringBuilder computation = new StringBuilder();
 
-        if (node.getJmmChild(0).getAttributes().contains("name")) {
-            if (checkIfImport(node.getJmmChild(0).get("name"))) {
-                code.append("invokestatic(");
-                code.append(node.getJmmChild(0).get("name"));
+        JmmNode receiverNode = node.getJmmChild(0);
+        boolean isStatic = false;
+
+        // Compute the receiver of the method call
+        String receiverCode;
+        if (receiverNode.getAttributes().contains("name")) {
+            String receiverName = receiverNode.get("name");
+            if (checkIfImport(receiverName)) {
+                isStatic = true;
+                receiverCode = receiverName;
             } else {
-
-                code.append("invokevirtual(");
-                if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
-                    code.append(node.getJmmChild(0).get("name")).append(".");
-                    code.append(table.getClassName());
-                } else if (node.getJmmChild(0).getKind().equals("This")){
-                    code.append("this").append(".");
-                    code.append(table.getClassName());
-                } else {
-                    code.append(node.getJmmChild(0).get("value")).append(".");
-                    code.append(table.getClassName());
-                }
+                receiverCode = receiverName + "." + TypeUtils.getExprType(receiverNode, table).getName();
             }
         } else {
-
-            code.append("invokevirtual(");
-            if (node.getJmmChild(0).getKind().equals("VarRefExpr")) {
-                code.append(node.getJmmChild(0).get("name")).append(".");
-                code.append(table.getClassName());
-            } else if (node.getJmmChild(0).getKind().equals("This")){
-                code.append("this").append(".");
-                code.append(table.getClassName());
+            if ("This".equals(receiverNode.getKind())) {
+                receiverCode = "this." + table.getClassName();
             } else {
-                code.append(node.getJmmChild(0).get("value")).append(".");
-                code.append(table.getClassName());
+                receiverCode = receiverNode.get("value") + "." + table.getClassName();
             }
         }
 
-        code.append(", \"");
-        code.append(functionName);
-        code.append("\"");
+        // Generate temporary variable for receiver if necessary
+        if (receiverCode.contains("invokevirtual") || receiverCode.contains("invokestatic")) {
+            String receiverTemp = OptUtils.getTemp() + OptUtils.toOllirType(receiverNode);
+            computation.append(receiverTemp).append(SPACE)
+                    .append(ASSIGN).append(OptUtils.toOllirType(receiverNode)).append(SPACE)
+                    .append(receiverCode).append(END_STMT);
+            receiverCode = receiverTemp;
+        }
 
-        StringBuilder aux = new StringBuilder();
+        // Determine whether to use invokevirtual or invokestatic
+        if (isStatic) {
+            code.append("invokestatic(").append(receiverCode);
+        } else {
+            code.append("invokevirtual(").append(receiverCode);
+        }
 
+        code.append(", \"").append(functionName).append("\"");
+
+        // Compute arguments
         for (int i = 1; i < node.getNumChildren(); i++) {
             code.append(", ");
-            // check if the child is a literal or a function variable
-            if (!isVariableOrFunc(node.getJmmChild(i))) {
-                var child = visit(node.getJmmChild(i));
-                aux.append(child.getCode()).append(END_STMT);
-                // append aux ate the beginning of the code
-                code.insert(0, aux);
-                code.append(OptUtils.getCurrentTemp()).append(".i32");
-            } else {
-                code.append(visit(node.getJmmChild(i)).getCode());
+            JmmNode argNode = node.getJmmChild(i);
+            var argResult = visit(argNode);
+
+            // Generate temporary variables for complex arguments if necessary
+            String argCode = argResult.getCode();
+            if (argCode.contains("invokevirtual") || argCode.contains("invokestatic")) {
+                String argTemp = OptUtils.getTemp() + OptUtils.toOllirType(argNode);
+                computation.append(argTemp).append(SPACE)
+                        .append(ASSIGN).append(OptUtils.toOllirType(argNode)).append(SPACE)
+                        .append(argCode).append(END_STMT);
+                argCode = argTemp;
             }
+            code.append(argCode);
         }
 
-        if (table.getReturnType(node.get("value")) != null) {
-            code.append(")").append(OptUtils.toOllirType(table.getReturnType(functionName)));
+        // Determine the return type
+        Type returnType = TypeUtils.getExprType(node, table);
+        if (returnType != null) {
+            code.append(")").append(OptUtils.toOllirType(returnType));
         } else {
             code.append(").V");
         }
 
         code.append(END_STMT);
 
-        return new OllirExprResult(code.toString());
+        // Prepend the computation for receiver and arguments
+        computation.append(code);
 
+        return new OllirExprResult(computation.toString());
     }
+
+
 
     private OllirExprResult visitVarRef(JmmNode node, Void unused) {
 
@@ -271,16 +399,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         StringBuilder code = new StringBuilder();
         code.append(visit(node.getJmmChild(0)).getComputation());
 
-//        JmmNode Expression = node.getJmmChild(0);
-//        JmmNode Statement1 = node.getJmmChild(1);
-//        JmmNode Statement2 = node.getJmmChild(2);
-//
-//        boolean noNext = false;
-//
-//        Expression.put("true", OptUtils.getIfLabel());
-//        Expression.put("false", OptUtils.getEndIfLabel());"
-
-        var currNode = node.getJmmChild(1);
 
         if (node.getJmmChild(1).getKind().equals("BRACKETS")) {
             if (node.getNumChildren() == 3) {
@@ -367,7 +485,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private OllirExprResult visitExprStmt(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
-        code.append(visit(node.getJmmChild(0)).getCode());
+        var aux = visit(node.getJmmChild(0));
+        code.append(aux.getCode());
         return new OllirExprResult(code.toString());
     }
 
@@ -394,6 +513,12 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         code.append("[");
         code.append(visit(node.getJmmChild(1)).getCode());
         code.append("]");
+        return new OllirExprResult(code.toString());
+    }
+
+    private OllirExprResult visitThis(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+        code.append("this.").append(table.getClassName());
         return new OllirExprResult(code.toString());
     }
 

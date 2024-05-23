@@ -26,6 +26,10 @@ public class UndeclaredVariable extends AnalysisVisitor {
     private Set<String> declaredFields = new HashSet<>();
     private Set<String> declaredMethods = new HashSet<>();
 
+    private Set<String> importedClasses = new HashSet<>();
+
+    private Set<String> localVariables = new HashSet<>();
+
     private boolean isCurrentMethodStatic;
 
 
@@ -36,8 +40,10 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
         addVisit(Kind.ARRAY_ACCESS, this::visitArrayAccess);
         addVisit(Kind.BINARY_EXPR, this::visitBinaryExpr);
+        addVisit(Kind.BINARY_EXPR_AND, this::visitBinaryExpr);
         addVisit(Kind.NEGATION, this::visitNegation);
         addVisit(Kind.RETURN_STMT, this::visitReturnStmt);
+        addVisit(Kind.IMPORT_DECL, this::visitImportDecl);
         addVisit(Kind.LENGTH, this::visitLength);
         addVisit(Kind.ARRAY_LITERAL, this::visitArrayLiteral);
         addVisit(Kind.ASSIGN_STMT, this::visitAssignStmt);
@@ -56,6 +62,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         addVisit(Kind.THIS, this::visitThisExpr);
         addVisit("IfStm", this::visitIfStm);
         addVisit("WhileStm", this::visitWhileStm);
+        addVisit(Kind.VAR_DECL, this::visitVarDeclaration);
     }
 
 
@@ -64,6 +71,56 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type arrayType = TypeUtils.getExprType(array, table);
         if (!arrayType.isArray()) {
             String message = "Invalid length operation";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        }
+        return null;
+    }
+
+    private Void visitImportDecl(JmmNode importNode, SymbolTable table) {
+        String importName = importNode.get("ID");
+
+
+        String[] importParts = importName.split("\\.");
+        String className = importParts[importParts.length - 1];
+        System.out.println(className);
+
+        if (importedClasses.contains(className)) {
+            String message = "Duplicate import declaration: " + className;
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(importNode),
+                    NodeUtils.getColumn(importNode),
+                    message, null)
+            );
+        } else {
+            importedClasses.add(className);
+        }
+        return null;
+    }
+
+
+    private Void visitVarDeclaration (JmmNode node, SymbolTable table){
+        String varName = node.get("name");
+        if (localVariables.contains(varName)) {
+            String message = "Duplicate variable declaration: " + varName;
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+        } else {
+            localVariables.add(varName);
+        }
+
+        JmmNode varNode = node.getChild(0);
+        if ("VARARG".equals(varNode.getKind())) {
+            String message = "Invalid variable declaration: varargs cannot be used in locals";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),
@@ -128,8 +185,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
         JmmNode stmt = node.getChildren().get(0);
         Type retType = TypeUtils.getExprType(stmt, table);
         Type methodType = table.getReturnType(currentMethod);
+
+
         if(retType == null){
             String message = "Invalid return type";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(node),
+                    NodeUtils.getColumn(node),
+                    message, null)
+            );
+            return null;
+        }
+
+        if (methodType.getName().equals("VARARG")) {
+            String message = "Invalid return type: cannot return VARARG";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(node),
@@ -216,6 +286,18 @@ public class UndeclaredVariable extends AnalysisVisitor {
         String methodName = method.get("name");
         List<JmmNode> params=method.getChildren("ParamDeclaration");
         Set <String> paramsSet = new HashSet<>();
+        localVariables.clear();
+
+        Type retType = table.getReturnType(currentMethod);
+        if(method.getChild(0).getKind().equals("VARARG")){
+            String message = "Invalid return type: cannot return VARARG";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(method),
+                    NodeUtils.getColumn(method),
+                    message, null)
+            );
+        }
 
         if(method.getAttributes().contains("isStatic")){
             isCurrentMethodStatic = true;
@@ -385,6 +467,16 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         Type lhsType = TypeUtils.getExprType(lhsNode, table);
         Type rhsType = TypeUtils.getExprType(rhsNode, table);
+
+        if(lhsType.getName().equals("boolean") || rhsType.getName().equals("boolean")){
+            String message = "boolean in array init ";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(arrayLiteral),
+                    NodeUtils.getColumn(arrayLiteral),
+                    message, null)
+            );
+        }
 
         Type expectedType = TypeUtils.getExprType(arrayLiteral.getChildren().get(0), table);
 
@@ -581,6 +673,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null;
         }
 
+
         if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
             return null;
         }
@@ -629,13 +722,29 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     null
             ));
         }
+
+
+        if(!lhsNode.getKind().equals("VarRefExpr") ){
+            String message = "Should be a varrefexpr";
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(assignStmt),
+                    NodeUtils.getColumn(assignStmt),
+                    message,
+                    null
+            ));
+        }
         return null;
     }
 
 
 
     private Void visitNewClass(JmmNode node, SymbolTable table) {
-        if(table.getImports().stream().noneMatch(name -> name.equals(node.get("value"))) && !(node.get("value").equals(table.getClassName()))){
+
+        dealClassDecl(node,table);
+
+        if (table.getImports().stream().noneMatch(name -> name.equals(node.get("value"))) &&
+                !(node.get("value").equals(table.getClassName()))) {
             String message = "Class is not defined";
             addReport(Report.newError(
                     Stage.SEMANTIC,
@@ -681,6 +790,21 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         if(table.getMethods().contains(method.get("value"))){
             return null;
+        }
+
+        String methodName = method.get("value");
+
+        for (String importedClass : table.getImports()) {
+            // Divide o nome do import em partes usando o '.' como delimitador
+            String[] parts = importedClass.split("\\.");
+
+            // Pega apenas o último elemento da lista de partes
+            String lastPart = parts[parts.length - 1];
+
+            // Verifica se o último elemento do import é igual ao nome do método
+            if (lastPart.equals(methodName)) {
+                return null; // O último elemento do import é igual ao nome do método, não há problema
+            }
         }
 
         if(!table.getMethods().contains(method.get("value")) && !table.getImports().contains(method.get("value"))){

@@ -45,7 +45,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(PARAM_DECLARATION, this::visitParam);
         addVisit(RETURN_STMT, this::visitReturn);
         addVisit(VAR_DECLARATION, this::visitVarDecl);
-        //addVisit(ASSIGN_STMT, this::visitAssignStmt);
         addVisit(METHOD_DECLARATION, this::visitMethodDecl);
         setDefaultVisit(this::defaultVisit);
     }
@@ -74,37 +73,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         return code.toString();
     }
-    private String visitAssignStmt(JmmNode node, Void unused) {
-
-        var lhs = exprVisitor.visit(node.getJmmChild(0));
-        var rhs = OllirExprResult.EMPTY;
-        if (node.getNumChildren()>1) {
-            rhs = exprVisitor.visit(node.getJmmChild(1));
-        }
-
-        StringBuilder code = new StringBuilder();
-
-        code.append(lhs.getComputation());
-        code.append(rhs.getComputation());
-
-        Type thisType = TypeUtils.getExprType(node.getJmmChild(0), table);
-        String typeString = OptUtils.toOllirType(thisType);
-
-
-        code.append(lhs.getCode());
-        code.append(SPACE);
-
-        code.append(ASSIGN);
-        code.append(typeString);
-        code.append(SPACE);
-
-        code.append(rhs.getCode());
-
-        code.append(END_STMT);
-
-        return code.toString();
-    }
-
 
     private String visitReturn(JmmNode node, Void unused) {
 
@@ -172,7 +140,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         return code;
     }
-
 
     private String visitMethodDecl(JmmNode node, Void unused) {
         String currentMethod = node.get("name");

@@ -23,6 +23,10 @@ public class OptUtils {
 
     private static int whileEndLabel = -1;
 
+    private static int and_true = -1;
+
+    private static int and_end = -1;
+
     public static String getTemp() {
 
         return getTemp("tmp");
@@ -45,6 +49,14 @@ public class OptUtils {
 
     public static String getWhileEndLabel() {
         return getWhileEndLabel("whileEnd");
+    }
+
+    public static String getAndTrue() {
+        return getAndTrue("true_");
+    }
+
+    public static String getAndEnd() {
+        return getAndEnd("end_");
     }
 
     public static String getTemp(String prefix) {
@@ -73,6 +85,14 @@ public class OptUtils {
         return prefix + getNextWhileEndLabel();
     }
 
+
+    public static String getAndTrue(String prefix) {
+        return prefix + getNextAndTrue();
+    }
+
+    public static String getAndEnd(String prefix) {
+        return prefix + getNextAndEnd();
+    }
     public static int getNextTempNum() {
 
         tempNumber += 1;
@@ -105,6 +125,16 @@ public class OptUtils {
         return whileEndLabel;
     }
 
+
+    public static int getNextAndTrue() {
+        and_true += 1;
+        return and_true;
+    }
+
+    public static int getNextAndEnd() {
+        and_end += 1;
+        return and_end;
+    }
     public static String getCurrentTemp() {
 
         return "tmp" + tempNumber;
@@ -131,6 +161,14 @@ public class OptUtils {
         return "whileEnd" + whileEndLabel;
     }
 
+
+    public static String getCurrentAndTrue() {
+        return "true_" + and_true;
+    }
+
+    public static String getCurrentAndEnd() {
+        return "end_" + and_end;
+    }
     public static String toOllirType(JmmNode typeNode) {
 
         if (typeNode.getKind().equals("IntegerLiteral")) {

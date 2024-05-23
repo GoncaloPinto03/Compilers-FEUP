@@ -49,6 +49,7 @@ public class TypeUtils {
 
         return switch (kind) {
             case BINARY_EXPR -> getBinExprType(expr);
+            case BINARY_EXPR_AND -> getBinExprType(expr);
             case VAR_REF_EXPR -> getVarExprType(expr, table);
             case INTEGER_LITERAL -> new Type(INT_TYPE_NAME, false);
             case IDENTIFIER, NEGATION -> new Type("boolean", false);
@@ -60,6 +61,7 @@ public class TypeUtils {
             case ARRAY_ACCESS -> new Type(INT_TYPE_NAME, false);
             case ARRAY_LITERAL -> new Type(INT_TYPE_NAME, true);
             case LENGTH -> new Type(INT_TYPE_NAME, false);
+            case VARARG -> new Type("vararg", true);
 
             default ->
                     new Type("undefined", false);
@@ -101,6 +103,9 @@ public class TypeUtils {
             symbol = table.getFields().stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
         }
         if(symbol == null){
+            //symbol = table.getImports().stream().filter(var -> var.g.equals(varName)).findAny().orElse(null);
+        }
+        if(symbol == null){
             return null;
         }
 
@@ -139,8 +144,15 @@ public class TypeUtils {
         if (Objects.equals(classType.getName(), "this") || Objects.equals(classType.getName(), table.getClassName())) {
             return table.getReturnType(methodName);
         } else {
-            if (!importedClass(classType.getName(), table)) {
-                return null;
+//            if (!importedClass(classType.getName(), table)) {
+//                return null;
+//            }
+            for (String importDecl : table.getImports()) {
+                String[] segments = importDecl.split("\\.");
+                if (segments[segments.length - 1].equals(classType.getName())) {
+                    return classType;
+                }
+
             }
             return new Type("undefined", false);
         }

@@ -1,6 +1,19 @@
-class Varargs {
+import test.bar.Lego;
+class Test{
+     int test(){
+          int i;
+          boolean b;
+          Test t;
+          Lego l;
 
-    public int varargs(int... a, int b) {
-        return a[0];
-    }
+           l = new Lego();
+           t = this;
+
+            l.printHello();
+            //t.moo();
+
+            return 0;
+     }
+
+
 }

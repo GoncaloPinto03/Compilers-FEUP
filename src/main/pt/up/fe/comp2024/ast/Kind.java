@@ -11,6 +11,8 @@ public enum Kind {
     CLASS_DECL,
 
     METHOD_CALL,
+
+    VARIABLE_INT,
     VARARG,
 
     NEGATION,
@@ -65,6 +67,8 @@ public enum Kind {
     BRACKETS,
 
     EXPR_STMT,
+
+    BINARY_EXPR_AND,
 
     VAR_REF_EXPR, MAIN_DECL();
 
