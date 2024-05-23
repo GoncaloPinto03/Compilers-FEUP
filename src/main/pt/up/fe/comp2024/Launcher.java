@@ -51,33 +51,40 @@ public class Launcher {
 
 //        // Code generation stage
 
-        OllirResult ollirResult = new OllirResult("import io;\n" +
+        OllirResult ollirResult = new OllirResult("import ioPlus;\n" +
+                "IfWhileNested {\n" +
                 "\n" +
-                "Arithmetic_and{\n" +
+                "    .construct IfWhileNested().V {\n" +
+                "        invokespecial(this, \"<init>\").V;\n" +
+                "    }\n" +
                 "\n" +
-                "   .construct Arithmetic_and().V {\n" +
-                "       invokespecial(this, \"<init>\").V;\n" +
-                "   }\n" +
+                "    .method public func(a.i32).i32 {\n" +
+                "flag.bool :=.bool 1.bool;\n" +
+                "i.i32 :=.i32 0.i32;\n" +
+                "if (i.i32 <.bool a.i32) goto whilebody_1;\n" +
+                "goto endwhile_1;\n" +
+                "whilebody_1:\n" +
                 "\n" +
-                "   .method public static main(args.array.String).V {\n" +
-                "      tmp0.Arithmetic_and :=.Arithmetic_and new(Arithmetic_and).Arithmetic_and;\n" +
-                "      invokespecial(tmp0.Arithmetic_and, \"<init>\").V;\n" +
-                "      c.Arithmetic_and :=.Arithmetic_and tmp0.Arithmetic_and;\n" +
-                "      if(1.bool) goto true_0;\n" +
-                "      tmp1.bool :=.bool 0.bool;\n" +
-                "      goto end_0;\n" +
-                "      true_0:\n" +
-                "      tmp2.bool :=.bool invokevirtual(c.Arithmetic_and, \"p\", 1.i32).bool;\n" +
-                "      tmp1.bool :=.bool tmp2.bool;\n" +
-                "      end_0:\n" +
-                "      a.bool :=.bool tmp1.bool;\n" +
-                "      ret.V ;\n" +
-                "   }\n" +
+                "if (flag.bool) goto ifbody_0;\n" +
+                "    invokestatic(ioPlus, \"printResult\", 2.i32).V;\n" +
+                "goto endif_0;\n" +
+                "ifbody_0:\n" +
+                "    invokestatic(ioPlus, \"printResult\", 1.i32).V;\n" +
+                "endif_0:\n" +
+                "flag.bool :=.bool !.bool flag.bool;\n" +
+                "i.i32 :=.i32 i.i32 +.i32 1.i32;\n" +
+                "if (i.i32 <.bool a.i32) goto whilebody_1;\n" +
+                "endwhile_1:\n" +
+                "ret.i32 1.i32;\n" +
+                "    }\n" +
+                "    .method public static main(args.array.String).V {\n" +
+                "d.IfWhileNested :=.IfWhileNested new(IfWhileNested).IfWhileNested;\n" +
+                "invokespecial(d.IfWhileNested,\"<init>\").V;\n" +
+                "a.i32 :=.i32 invokevirtual(d.IfWhileNested, \"func\", 3.i32).i32;\n" +
                 "\n" +
-                "   .method p(value.i32).bool {\n" +
-                "      invokestatic(io, \"print\", value.i32).V;\n" +
-                "      ret.bool 1.bool;\n" +
-                "   }\n" +
+                "ret.V;\n" +
+                "    }\n" +
+                "\n" +
                 "}", null);
         JasminBackendImpl jasminGen = new JasminBackendImpl();
         JasminResult jasminResult = jasminGen.toJasmin( ollirResult);

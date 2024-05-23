@@ -58,6 +58,14 @@ public class JasminGenerator {
         generators.put(GetFieldInstruction.class, this::generateGetField);
         generators.put(GotoInstruction.class, inst -> "goto " + ((GotoInstruction) inst).getLabel() + NL);
         generators.put(CondBranchInstruction.class, this::generateCondBranch);
+        generators.put(UnaryOpInstruction.class, inst -> {
+            var unaryOp = (UnaryOpInstruction) inst;
+            var code = new StringBuilder();
+            code.append(generators.apply(unaryOp.getOperand()));
+            code.append("iconst_1").append(NL);
+            code.append("ixor").append(NL);
+            return code.toString();
+        });
     }
 
     public List<Report> getReports() {
