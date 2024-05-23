@@ -2,7 +2,7 @@ import test.Exemplo;
 
 HelloWorld {
 
-    .method public foo().i32 {
+    .method public foo(a.Exemplo).i32 {
 
         e.Exemplo :=.Exemplo new(Exemplo).Exemplo;
         invokespecial(e.Exemplo, "<init>").V;
