@@ -674,7 +674,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         }
 
 
-
         if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
             return null;
         }
@@ -715,6 +714,18 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         if (!TypeUtils.areTypesAssignable(rhsType, lhsType)) {
             String message = String.format("Type mismatch: cannot assign %s to %s", rhsType, lhsType);
+            addReport(Report.newError(
+                    Stage.SEMANTIC,
+                    NodeUtils.getLine(assignStmt),
+                    NodeUtils.getColumn(assignStmt),
+                    message,
+                    null
+            ));
+        }
+
+
+        if(!lhsNode.getKind().equals("VarRefExpr") ){
+            String message = "Should be a varrefexpr";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(assignStmt),
