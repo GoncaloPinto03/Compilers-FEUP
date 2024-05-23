@@ -542,16 +542,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return  null;
         }
 
-        if(!arrayNode.getKind().equals("VarRefExpr")){
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(array),
-                    NodeUtils.getColumn(array),
-                    "ERROR",
-                    null)
-            );
-            return null;
-        }
 
         // Check if the array node is actually an array
         if (!arrayType.isArray()){
