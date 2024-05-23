@@ -103,14 +103,10 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private OllirExprResult visitBinExprAnd(JmmNode node, Void unused) {
         var lhs = visit(node.getJmmChild(0));
-        var rhs = OllirExprResult.EMPTY;
-        if (node.getNumChildren() > 1) {
-            rhs = visit(node.getJmmChild(1));
-        }
+        var rhs = visit(node.getJmmChild(1));
 
+        // Build the computation string for the AND operation
         StringBuilder computation = new StringBuilder();
-
-        // code to compute the children
         computation.append(lhs.getComputation());
         computation.append(rhs.getComputation());
 
@@ -132,27 +128,34 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                     .append(rhsCode);
             rhsCode = rhsTemp;
         }
-        StringBuilder aux = new StringBuilder();
 
-        aux.append("if(");
-        aux.append(lhsCode);
-        aux.append(") goto ").append(OptUtils.getAndTrue()).append(";\n");
-        aux.append(OptUtils.getTemp()).append(".bool").append(ASSIGN).append(".bool 0.bool").append(";\n");
-        aux.append("goto ").append(OptUtils.getAndEnd()).append(";\n");
-        aux.append(OptUtils.getCurrentAndTrue()).append(":\n");
-        aux.append(computation);
-        aux.append(OptUtils.getCurrentTemp()).append(".bool").append(ASSIGN).append(rhsCode).append(END_STMT);
-        aux.append(OptUtils.getCurrentAndEnd()).append(SPACE).append(":\n");
+        // Create a temporary variable to hold the result of the AND operation
+        String resultTemp = OptUtils.getTemp() + ".bool";
 
-        return new OllirExprResult(aux.toString());
+        // Build the OLLIR code for the AND operation
+        StringBuilder ollirCode = new StringBuilder();
+        ollirCode.append("if (").append(lhsCode).append(") goto ").append(OptUtils.getAndTrue()).append(";\n");
+        ollirCode.append(resultTemp).append(SPACE).append(ASSIGN).append(".bool 0.bool;\n");
+        ollirCode.append("goto ").append(OptUtils.getAndEnd()).append(";\n");
+        ollirCode.append(OptUtils.getCurrentAndTrue()).append(":\n");
+        ollirCode.append(computation);
+        ollirCode.append(resultTemp).append(SPACE).append(ASSIGN).append(OptUtils.toOllirType(table.getReturnType(node.getJmmChild(1).get("value")))).append(SPACE).append(rhsCode).append(END_STMT);
+        ollirCode.append(OptUtils.getCurrentAndEnd()).append(SPACE).append(":\n");
 
+        return new OllirExprResult(resultTemp, ollirCode.toString());
     }
 
     private OllirExprResult visitAssignStmt(JmmNode node, Void unused) {
         var lhs = visit(node.getJmmChild(0));
         var rhs = OllirExprResult.EMPTY;
+        String lhsCode = lhs.getCode();
         if (node.getNumChildren() > 1) {
-            rhs = visit(node.getJmmChild(1));
+            if (node.getJmmChild(1).getKind().equals("NewClass")) {
+                lhsCode = OptUtils.getTemp() + OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(0), table));
+                rhs = visit(node.getJmmChild(1));
+            } else {
+                rhs = visit(node.getJmmChild(1));
+            }
         }
 
         StringBuilder computation = new StringBuilder();
@@ -162,7 +165,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         computation.append(rhs.getComputation());
 
         // Generate temporary variables for complex expressions if necessary
-        String lhsCode = lhs.getCode();
+        if (!node.getJmmChild(1).getKind().equals("NewClass")) {
+            lhsCode = lhs.getCode();
+        }
         if (lhsCode.contains("invokevirtual") || lhsCode.contains("invokestatic")) {
             String lhsTemp = OptUtils.getTemp() + OptUtils.toOllirType(node.getJmmChild(0));
             computation.append(lhsTemp).append(SPACE)
@@ -371,8 +376,12 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         code.append(OptUtils.toOllirType(node)).append(END_STMT);
 
         code.append("invokespecial(");
-        code.append(node.getParent().getJmmChild(0).get("name")).append(".").append(node.get("value"));
-        code.append(", \"<init>\")").append(".V");
+        code.append(OptUtils.getCurrentTemp()).append(".").append(node.get("value"));
+        code.append(", \"<init>\")").append(".V").append(END_STMT);
+
+        code.append(node.getParent().getJmmChild(0).get("name")).append(OptUtils.toOllirType(node)).append(" := ");
+        code.append(OptUtils.toOllirType(node)).append(SPACE);
+        code.append(OptUtils.getCurrentTemp()).append(OptUtils.toOllirType(node));
 
         return new OllirExprResult(code.toString());
     }
