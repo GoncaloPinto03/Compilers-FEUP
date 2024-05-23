@@ -1,19 +1,12 @@
-import test.bar.Lego;
-class Test{
-     int test(){
-          int i;
-          boolean b;
-          Test t;
-          Lego l;
+class NoIdOnLeftSideOfAssign {
 
-           l = new Lego();
-           t = this;
+    int[] foo() {
+        int[] a;
+        return a;
+    }
 
-            l.printHello();
-            //t.moo();
-
-            return 0;
-     }
-
-
+    int bar() {
+        this.foo()[0] = 10;
+        return 0;
+    }
 }
