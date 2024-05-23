@@ -96,8 +96,7 @@ public class JasminGenerator {
         code.append(op).append(" ").append(condBranchInstruction.getLabel()).append(NL);
         }
         else if(condBranchInstruction.getCondition() instanceof SingleOpInstruction){
-            code.append(generators.apply(condBranchInstruction.getCondition()));
-            code.append("ifeq ").append(condBranchInstruction.getLabel()).append(NL);
+            code.append("ifne ").append(condBranchInstruction.getLabel()).append(NL);
         }
 
         return code.toString();
@@ -282,7 +281,7 @@ public class JasminGenerator {
                 else
                     yield "ldc " + value + NL;
             }
-            case BOOLEAN -> "iconst_" + (literal.getLiteral().equals("true") ? "1" : "0") + NL;
+            case BOOLEAN ->  "iconst_" + Integer.parseInt(literal.getLiteral()) + NL;
             case STRING -> "ldc " + literal.getLiteral() + NL;
             default -> throw new NotImplementedException(literal.getType().getTypeOfElement());
         };
