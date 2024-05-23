@@ -8,9 +8,7 @@ import pt.up.fe.specs.util.classmap.FunctionClassMap;
 import pt.up.fe.specs.util.exceptions.NotImplementedException;
 import pt.up.fe.specs.util.utilities.StringLines;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.specs.comp.ollir.CallType.*;
@@ -56,10 +54,22 @@ public class JasminGenerator {
         generators.put(CallInstruction.class, this::generateCall);
         generators.put(PutFieldInstruction.class, this::generatePutFieldCode);
         generators.put(GetFieldInstruction.class, this::generateGetFieldCode);
+
+        checkSimilarImports();
     }
 
     public List<Report> getReports() {
         return reports;
+    }
+
+    private void checkSimilarImports(){
+        Set<String> classNames = new HashSet<>();
+        for (String imprt : ollirResult.getOllirClass().getImports()) {
+            String className = imprt.substring(imprt.lastIndexOf('.') + 1);
+            if (!classNames.add(className)) {
+                throw new IllegalArgumentException("Duplicate import detected: " + className);
+            }
+        }
     }
 
     public String build() {
