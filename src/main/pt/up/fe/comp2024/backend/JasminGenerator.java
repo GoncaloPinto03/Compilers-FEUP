@@ -78,7 +78,8 @@ public class JasminGenerator {
         var code = new StringBuilder();
 
         code.append(generators.apply(condBranchInstruction.getOperands().get(0)));
-        code.append(generators.apply(condBranchInstruction.getOperands().get(1)));
+        if(condBranchInstruction.getCondition() instanceof BinaryOpInstruction){
+            code.append(generators.apply(condBranchInstruction.getOperands().get(1)));
 
         ((BinaryOpInstruction) condBranchInstruction.getCondition()).getOperation().getOpType();
 
@@ -93,6 +94,11 @@ public class JasminGenerator {
         };
 
         code.append(op).append(" ").append(condBranchInstruction.getLabel()).append(NL);
+        }
+        else if(condBranchInstruction.getCondition() instanceof SingleOpInstruction){
+            code.append(generators.apply(condBranchInstruction.getCondition()));
+            code.append("ifeq ").append(condBranchInstruction.getLabel()).append(NL);
+        }
 
         return code.toString();
     }

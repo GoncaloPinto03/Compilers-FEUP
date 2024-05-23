@@ -51,27 +51,33 @@ public class Launcher {
 
 //        // Code generation stage
 
-        OllirResult ollirResult = new OllirResult("import ioPlus;\n" +
-                "SimpleWhileStat {\n" +
+        OllirResult ollirResult = new OllirResult("import io;\n" +
                 "\n" +
-                "    .construct SimpleWhileStat().V {\n" +
-                "        invokespecial(this, \"<init>\").V;\n" +
-                "    }\n" +
+                "Arithmetic_and{\n" +
                 "\n" +
-                "    .method public static main(args.array.String).V {\n" +
-                "a.i32 :=.i32 3.i32;\n" +
-                "i.i32 :=.i32 0.i32;\n" +
-                "if (i.i32 <.bool a.i32) goto whilebody_0;\n" +
-                "goto endwhile_0;\n" +
-                "whilebody_0:\n" +
-                "invokestatic(ioPlus, \"printResult\", i.i32).V;\n" +
-                "i.i32 :=.i32 i.i32 +.i32 1.i32;\n" +
-                "if (i.i32 <.bool a.i32) goto whilebody_0;\n" +
-                "endwhile_0:\n" +
+                "   .construct Arithmetic_and().V {\n" +
+                "       invokespecial(this, \"<init>\").V;\n" +
+                "   }\n" +
                 "\n" +
-                "ret.V;\n" +
-                "    }\n" +
+                "   .method public static main(args.array.String).V {\n" +
+                "      tmp0.Arithmetic_and :=.Arithmetic_and new(Arithmetic_and).Arithmetic_and;\n" +
+                "      invokespecial(tmp0.Arithmetic_and, \"<init>\").V;\n" +
+                "      c.Arithmetic_and :=.Arithmetic_and tmp0.Arithmetic_and;\n" +
+                "      if(1.bool) goto true_0;\n" +
+                "      tmp1.bool :=.bool 0.bool;\n" +
+                "      goto end_0;\n" +
+                "      true_0:\n" +
+                "      tmp2.bool :=.bool invokevirtual(c.Arithmetic_and, \"p\", 1.i32).bool;\n" +
+                "      tmp1.bool :=.bool tmp2.bool;\n" +
+                "      end_0:\n" +
+                "      a.bool :=.bool tmp1.bool;\n" +
+                "      ret.V ;\n" +
+                "   }\n" +
                 "\n" +
+                "   .method p(value.i32).bool {\n" +
+                "      invokestatic(io, \"print\", value.i32).V;\n" +
+                "      ret.bool 1.bool;\n" +
+                "   }\n" +
                 "}", null);
         JasminBackendImpl jasminGen = new JasminBackendImpl();
         JasminResult jasminResult = jasminGen.toJasmin( ollirResult);
