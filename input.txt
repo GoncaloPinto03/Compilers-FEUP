@@ -1,22 +1,17 @@
-import B.C;
+import io;
+import A.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z;
 
-class A {
+class Arithmetic_and {
+	public static void main(String[] args) {
+		boolean a;
+		Arithmetic_and c;
 
-    public static void main(String[] args) {
-        A a;
-        a.func(a.foo(), a.bar());
-    }
+		c = new Arithmetic_and();
 
-    int foo() {
-        return 0;
-    }
+	}
 
-    boolean bar() {
-        return true;
-    }
-
-    int func(int a, boolean b) {
-        return 0;
-    }
-
+	boolean p(int value) {
+   	    z.print(value);
+   	    return true;
+   	}
 }

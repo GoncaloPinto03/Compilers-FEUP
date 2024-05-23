@@ -103,6 +103,9 @@ public class TypeUtils {
             symbol = table.getFields().stream().filter(var -> var.getName().equals(varName)).findAny().orElse(null);
         }
         if(symbol == null){
+            //symbol = table.getImports().stream().filter(var -> var.g.equals(varName)).findAny().orElse(null);
+        }
+        if(symbol == null){
             return null;
         }
 
