@@ -542,6 +542,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return  null;
         }
 
+
         // Check if the array node is actually an array
         if (!arrayType.isArray()){
             String message = "Invalid array access: '" + arrayNode.get("name") + "' is not an array.";
@@ -714,18 +715,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         if (!TypeUtils.areTypesAssignable(rhsType, lhsType)) {
             String message = String.format("Type mismatch: cannot assign %s to %s", rhsType, lhsType);
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(assignStmt),
-                    NodeUtils.getColumn(assignStmt),
-                    message,
-                    null
-            ));
-        }
-
-
-        if(!lhsNode.getKind().equals("VarRefExpr") ){
-            String message = "Should be a varrefexpr";
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(assignStmt),

@@ -173,9 +173,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         String rhsCode = rhs.getCode();
         if (rhsCode.contains("invokevirtual") || rhsCode.contains("invokestatic")) {
-            String rhsTemp = OptUtils.getTemp() + OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(1), table));
+            String rhsTemp = OptUtils.getTemp() + OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(0), table));
             computation.append(rhsTemp).append(SPACE)
-                    .append(ASSIGN).append(OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(1), table))).append(SPACE)
+                    .append(ASSIGN).append(OptUtils.toOllirType(TypeUtils.getExprType(node.getJmmChild(0), table))).append(SPACE)
                     .append(rhsCode);
             rhsCode = rhsTemp;
         }
@@ -329,7 +329,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         }
 
         // Determine the return type
-        Type returnType = TypeUtils.getExprType(node, table);
+        Type returnType = TypeUtils.getExprType(node.getParent().getJmmChild(0), table);
         if (returnType != null) {
             code.append(")").append(OptUtils.toOllirType(returnType));
         } else {
