@@ -1,16 +1,13 @@
-import test.bar.Lego;
+import Exemplo;
+
 class Test{
      int test(){
-          int i;
-          boolean b;
-          Test t;
-          Lego l;
+          Exemplo e;
+          int res;
 
-           l = new Lego();
-           t = this;
+          e = new Exemplo();
 
-            l.printHello();
-            //t.moo();
+            res = e.set(10);
 
             return 0;
      }
