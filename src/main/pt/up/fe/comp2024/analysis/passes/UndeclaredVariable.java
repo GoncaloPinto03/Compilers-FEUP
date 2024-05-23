@@ -673,16 +673,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null;
         }
 
-        if(!lhsNode.getKind().equals("VarRefExpr")){
-            String message = "Should be a varrefexpr";
-            addReport(Report.newError(
-                    Stage.SEMANTIC,
-                    NodeUtils.getLine(assignStmt),
-                    NodeUtils.getColumn(assignStmt),
-                    message,
-                    null
-            ));
-        }
+
 
         if(lhsType.getName().equals(rhsType.getName()) && lhsType.isArray() == rhsType.isArray()){
             return null;
