@@ -542,7 +542,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return  null;
         }
 
-        if(arrayNode.getKind().equals("MethodCall")){
+        if(!arrayNode.getKind().equals("VarRefExpr")){
             addReport(Report.newError(
                     Stage.SEMANTIC,
                     NodeUtils.getLine(array),
