@@ -339,7 +339,7 @@
 //            case invokevirtual -> code.append(invokeVirtual(callInstruction));
 //            case invokestatic -> code.append(invokeStatic(callInstruction));
 //            case invokeinterface -> code.append(invokeInterface(callInstruction));
-//            case NEW -> code.append("new ").append(getClassNameForElementType((ClassType) operand.getType())).append(NL).append("dup").append(NL);
+//            case NEW -> code.append("new ").append(operand.getName()).append(NL).append("dup").append(NL);
 //        }
 //
 //        // handle special case of VOID
@@ -377,7 +377,7 @@
 //    private String invokeSpecial(CallInstruction callInstruction) {
 //        var code = new StringBuilder();
 //        code.append(generators.apply(callInstruction.getOperands().get(0)));
-//        String className = getClassNameForElementType((ClassType)callInstruction.getCaller().getType());
+//        String className = getClassNameForElementType((ClassType) callInstruction.getCaller().getType());
 //        code.append("invokespecial ").append(className).append("/<init>");
 //
 //        code.append("(");
@@ -525,8 +525,6 @@
 //            name = classUnit.getClassName();
 //        } else {
 //            for (String imprt : classUnit.getImports()) {
-//                if (!imprt.contains("."))
-//                    name = imprt;
 //                String[] imprtSplit = imprt.split("\\.");
 //                if (imprtSplit[imprtSplit.length - 1].equals(classType.getName())) {
 //                    name = imprt;
@@ -543,7 +541,7 @@
 //    }
 //
 //}
-//
+
 
 
 
@@ -729,8 +727,6 @@ public class JasminGenerator {
 //                elementType = "[Ljava/lang/String;";
 
             code.append(elementType);
-            if (argument.getType().getTypeOfElement().equals(ElementType.OBJECTREF))
-                code.append(';');
         }
 
         code.append(")");
@@ -932,8 +928,7 @@ public class JasminGenerator {
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
         code.append(generators.apply(callInstruction.getOperands().get(0)));
-        String className = getClassNameForElementType((ClassType) callInstruction.getCaller().getType());
-        code.append("invokespecial ").append(className).append("/<init>");
+        code.append("invokespecial ").append(ollirResult.getOllirClass().getClassName().replace('.', '/')).append("/<init>");
 
         code.append("(");
         for (Element element : callInstruction.getArguments()) {
@@ -959,7 +954,7 @@ public class JasminGenerator {
         var callerClassName = (ClassType) callInstruction.getCaller().getType();
         var literal = (LiteralElement) callInstruction.getOperands().get(1);
 
-        code.append("invokevirtual " + getClassNameForElementType(callerClassName) + "/");
+        code.append("invokevirtual " + callerClassName.getName() + "/");
         code.append(literal.getLiteral().replace("\"", ""));
 
         code.append("(");
@@ -1092,7 +1087,7 @@ public class JasminGenerator {
 //            name = classType.getName(); // fallback to the simple name if not found in imports
 //        }
 
-        return name.replace('.', '/');
+        return name.replace('.', '/') + ";";
     }
 
 }
