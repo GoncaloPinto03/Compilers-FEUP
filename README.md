@@ -1,3 +1,22 @@
 # Comp2024 Project
 
-Contains a reference implementation for an initial version of the project that supports a small portion of Java--.
+## Group members
+
+- Gonçalo Santos (up202108839@edu.fe.up.pt)
+- Gonçalo Pinto (up202108693@edu.fe.up.pt)
+- Rui Carvalho (up202108807@edu.fe.up.pt)
+
+## Work Distribution
+
+- Gonçalo Santos - 33.33 %
+- Gonçalo Pinto - 33.33 %
+- Rui Carvalho - 33.33 %
+
+## Self-Assessment
+
+- We think our project deserves a 14 out of 20.
+
+## Extra Elements
+
+(Optional)
+- Our project supports...
