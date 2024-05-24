@@ -20,6 +20,7 @@ public class OllirExprResult {
         this(code, computation.toString());
     }
 
+
     public String getComputation() {
         return computation;
     }
