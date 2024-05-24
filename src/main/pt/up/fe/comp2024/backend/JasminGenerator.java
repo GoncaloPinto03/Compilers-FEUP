@@ -34,6 +34,8 @@ public class JasminGenerator {
     String code;
 
     Method currentMethod;
+    int stackLimit = 0;
+    int maxStackLimit = 3;
 
 
     private final FunctionClassMap<TreeNode, String> generators;
@@ -81,6 +83,14 @@ public class JasminGenerator {
         }
 
         return code;
+    }
+
+    private int getStackLimit() {
+        return maxStackLimit;
+    }
+    private void updateStackLimit() {
+        if (stackLimit >= maxStackLimit)
+            maxStackLimit = stackLimit;
     }
 
     private String generateCondBranch(CondBranchInstruction condBranchInstruction) {
@@ -222,11 +232,11 @@ public class JasminGenerator {
         code.append(returnType).append(NL);
 
 
-//        int limitsStack = calculateStackLimit(method);
+        int limitsStack = getStackLimit();
         int limitsLocals = calculateLocalsLimit(method);
 
         // Add limits
-        code.append(TAB).append(".limit stack 99").append(NL);
+        code.append(TAB).append(".limit stack ").append(limitsStack).append(NL);
         code.append(TAB).append(".limit locals ").append(limitsLocals).append(NL);
         var label = "";
         for (var inst : method.getInstructions()) {
@@ -250,30 +260,63 @@ public class JasminGenerator {
 
 
     public static int calculateLocalsLimit(Method method) {
-        // need to compute the max value used in the registers
-        int currentLocals = -1;
+        // Determine the initial max locals value based on whether the method is static or not
+        int maxLocals = method.isStaticMethod() ? -1 : 0;
+
+        // Get the variable table from the method
         HashMap<String, Descriptor> varTable = method.getVarTable();
-        boolean isStatic = method.isStaticMethod();
 
-        if (!isStatic)   // instance method
-            currentLocals = 0;
-
-        // traverse the values to count the locals limit by comparing the current value with the virtual reg
-        for (Descriptor desc : varTable.values()) {
-            var descVirtualReg = desc.getVirtualReg();
-            currentLocals = Math.max(currentLocals, descVirtualReg);
+        // Traverse the values to find the highest virtual register index
+        for (Descriptor descriptor : varTable.values()) {
+            int virtualReg = descriptor.getVirtualReg();
+            maxLocals = Math.max(maxLocals, virtualReg);
         }
 
-        // +1 because of this
-        return currentLocals + 1;
+        // Add 1 to account for zero-based index (and possibly for the 'this' reference in instance methods)
+        return maxLocals + 1;
     }
 
+
 //    private int calculateStackLimit(Method method) {
+//        int maxStackDepth = 0;
+//        int currentStackDepth = 0;
 //
+//        for (Instruction instruction : method.getInstructions()) {
+//            if (instruction instanceof AssignInstruction) {
+//                currentStackDepth += 1; // Right-hand side expression result is pushed onto the stack
+//                currentStackDepth -= 1; // Assigning the result involves popping it off the stack
+//            } else if (instruction instanceof CallInstruction) {
+//                CallInstruction call = (CallInstruction) instruction;
+//                int argCount = call.getOperands().size();
+//
+//                // Assuming first operand is the method reference for instance methods
+//                if (!method.isStaticMethod()) {
+//                    argCount += 1; // `this` reference
+//                }
+//
+//                currentStackDepth -= argCount; // Arguments (and possibly `this`) are popped off the stack
+//
+//                if (!call.getReturnType().equals("void")) {
+//                    currentStackDepth += 1; // Return value is pushed onto the stack
+//                }
+//            } else if (instruction instanceof SingleOpInstruction) {
+//                currentStackDepth += 1; // Operand is pushed onto the stack
+//            } else if (instruction instanceof BinaryOpInstruction) {
+//                currentStackDepth -= 1; // Two operands are popped, one result is pushed (net effect -1)
+//            } else if (instruction instanceof ReturnInstruction) {
+//                // Return instruction typically involves popping the return value off the stack
+//                currentStackDepth = 0; // Assume stack is empty after method returns
+//            }
+//
+//            if (currentStackDepth > maxStackDepth) {
+//                maxStackDepth = currentStackDepth;
+//            }
+//        }
+//
+//        return maxStackDepth;
 //    }
 
-
-        private String generateAssign(AssignInstruction assign) {
+    private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -292,8 +335,16 @@ public class JasminGenerator {
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
         switch (operand.getType().getTypeOfElement()) {
-            case INT32, BOOLEAN -> code.append("istore ").append(reg).append(NL);
-            case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> code.append("astore ").append(reg).append(NL);
+            case INT32, BOOLEAN -> {
+                code.append("istore ").append(reg).append(NL);
+                stackLimit--;
+                updateStackLimit();
+            }
+            case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> {
+                code.append("astore ").append(reg).append(NL);
+                stackLimit--;
+                updateStackLimit();
+            }
             case VOID -> code.append("store ").append(reg).append(NL);
             default -> throw new NotImplementedException("Unsupported assign type: " + operand.getType().getTypeOfElement());
         }
@@ -309,17 +360,34 @@ public class JasminGenerator {
         return switch (literal.getType().getTypeOfElement()) {
             case INT32 -> {
                 int value = Integer.parseInt(literal.getLiteral());
-                if (value >= 0 && value <= 5)
+                if (value >= 0 && value <= 5) {
+                    stackLimit++;
+                    updateStackLimit();
                     yield "iconst_" + value + NL;
-                else if (value >= -128 && value <= 127)
+                } else if (value >= -128 && value <= 127) {
+                    stackLimit++;
+                    updateStackLimit();
                     yield "bipush " + value + NL;
-                else if (value >= -32768 && value <= 32767)
+                } else if (value >= -32768 && value <= 32767) {
+                    stackLimit++;
+                    updateStackLimit();
                     yield "sipush " + value + NL;
-                else
+                } else {
+                    stackLimit++;
+                    updateStackLimit();
                     yield "ldc " + value + NL;
+                }
             }
-            case BOOLEAN -> literal.getLiteral().equals("1") ? "iconst_1" + NL : "iconst_0" + NL;
-            case STRING -> "ldc \"" + literal.getLiteral() + "\"" + NL;
+            case BOOLEAN -> {
+                stackLimit++;
+                updateStackLimit();
+                yield literal.getLiteral().equals("1") ? "iconst_1" + NL : "iconst_0" + NL;
+            }
+            case STRING -> {
+                stackLimit++;
+                updateStackLimit();
+                yield "ldc \"" + literal.getLiteral() + "\"" + NL;
+            }
             default -> throw new NotImplementedException(literal.getType().getTypeOfElement());
         };
     }
@@ -336,8 +404,16 @@ public class JasminGenerator {
 //        }
 //        return loadType;
         return switch (operand.getType().getTypeOfElement()) {
-            case INT32, BOOLEAN -> "iload " + reg + NL;
-            case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> "aload " + reg + NL;
+            case INT32, BOOLEAN -> {
+                stackLimit++;
+                updateStackLimit();
+                yield "iload " + reg + NL;
+            }
+            case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> {
+                stackLimit++;
+                updateStackLimit();
+                yield "aload " + reg + NL;
+            }
             default -> throw new NotImplementedException("Unsupported type: " + operand.getType().getTypeOfElement());
         };
     }
@@ -426,6 +502,7 @@ public class JasminGenerator {
             case invokeinterface -> code.append(invokeInterface(callInstruction));
             case arraylength -> {
                 // Load the array reference onto the stack
+//                code.append(generateArrayLength(callInstruction));
                 code.append(generateLoadOperand(operand));
                 code.append("arraylength").append(NL);
             }
@@ -443,6 +520,8 @@ public class JasminGenerator {
         if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
             // Only pop if the result is not used by a subsequent instruction
             if (usesResultOf(callInstruction)) {
+                stackLimit--;
+                updateStackLimit();
                 code.append("pop").append(NL);
             }
         return code.toString();
@@ -453,9 +532,13 @@ public class JasminGenerator {
         // Adjust as needed based on your specific Operand handling logic
         switch (operand.getType().getTypeOfElement()) {
             case INT32:
+                stackLimit++;
+                updateStackLimit();
                 return "iload " + operand.getParamId() + NL;
             case ARRAYREF:
             case OBJECTREF:
+                stackLimit += ((ArrayType)operand.getType()).getNumDimensions();
+                updateStackLimit();
                 return "aload " + ((ArrayType)operand.getType()).getNumDimensions() + NL;
             // Add cases for other types as needed
             default:
@@ -590,7 +673,6 @@ public class JasminGenerator {
 
         // Assume arrayRefInstruction is an instruction that generates code to load the array reference onto the stack
         Element arrayRefInstruction = ((UnaryOpInstruction) arrayLengthInstruction).getOperand();
-
         // Generate code to load the array reference
         code.append(generators.apply(arrayRefInstruction));
 
