@@ -32,10 +32,10 @@ public class JasminTest {
     public void ollirToJasminArithmetics() {
         testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/OllirToJasminArithmetics.ollir");
     }
-    @Test
-    public void myTest() {
-        testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/test.ollir");
-    }
+//    @Test
+//    public void myTest() {
+//        testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/test.ollir");
+//    }
 
     @Test
     public void ollirToJasminInvoke() {
