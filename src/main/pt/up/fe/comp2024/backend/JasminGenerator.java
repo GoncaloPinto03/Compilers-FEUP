@@ -34,8 +34,8 @@ public class JasminGenerator {
     String code;
 
     Method currentMethod;
-    int stackLimit = 0;
-    int maxStackLimit = 0;
+    static int stackLimit = 0;
+    static int maxStackLimit = 0;
 
 
     private final FunctionClassMap<TreeNode, String> generators;
@@ -236,7 +236,7 @@ public class JasminGenerator {
         int limitsLocals = calculateLocalsLimit(method);
 
         // Add limits
-        code.append(TAB).append(".limit stack 99").append(NL);
+        code.append(TAB).append(".limit stack ").append(limitsStack).append(NL);
         code.append(TAB).append(".limit locals ").append(limitsLocals).append(NL);
         var label = "";
         for (var inst : method.getInstructions()) {
@@ -348,13 +348,13 @@ public class JasminGenerator {
             switch (operand.getType().getTypeOfElement()) {
                 case INT32, BOOLEAN -> {
                     code.append("istore ").append(reg).append(NL);
-//                    stackLimit--;
-//                    updateStackLimit();
+                    stackLimit--;
+                    updateStackLimit();
                 }
                 case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> {
                     code.append("astore ").append(reg).append(NL);
-//                    stackLimit--;
-//                    updateStackLimit();
+                    stackLimit--;
+                    updateStackLimit();
                 }
                 case VOID -> code.append("store ").append(reg).append(NL);
                 default ->
@@ -374,31 +374,31 @@ public class JasminGenerator {
             case INT32 -> {
                 int value = Integer.parseInt(literal.getLiteral());
                 if (value >= 0 && value <= 5) {
-//                    stackLimit++;
-//                    updateStackLimit();
+                    stackLimit++;
+                    updateStackLimit();
                     yield "iconst_" + value + NL;
                 } else if (value >= -128 && value <= 127) {
-//                    stackLimit++;
-//                    updateStackLimit();
+                    stackLimit++;
+                    updateStackLimit();
                     yield "bipush " + value + NL;
                 } else if (value >= -32768 && value <= 32767) {
-//                    stackLimit++;
-//                    updateStackLimit();
+                    stackLimit++;
+                    updateStackLimit();
                     yield "sipush " + value + NL;
                 } else {
-//                    stackLimit++;
-//                    updateStackLimit();
+                    stackLimit++;
+                    updateStackLimit();
                     yield "ldc " + value + NL;
                 }
             }
             case BOOLEAN -> {
-//                stackLimit++;
-//                updateStackLimit();
+                stackLimit++;
+                updateStackLimit();
                 yield literal.getLiteral().equals("1") ? "iconst_1" + NL : "iconst_0" + NL;
             }
             case STRING -> {
-//                stackLimit++;
-//                updateStackLimit();
+                stackLimit++;
+                updateStackLimit();
                 yield "ldc \"" + literal.getLiteral() + "\"" + NL;
             }
             default -> throw new NotImplementedException(literal.getType().getTypeOfElement());
@@ -420,13 +420,13 @@ public class JasminGenerator {
         } else{
             return switch (operand.getType().getTypeOfElement()) {
                 case INT32, BOOLEAN -> {
-//                    stackLimit++;
-//                    updateStackLimit();
+                    stackLimit++;
+                    updateStackLimit();
                     yield "iload " + reg + NL;
                 }
                 case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> {
-//                    stackLimit++;
-//                    updateStackLimit();
+                    stackLimit++;
+                    updateStackLimit();
                     yield "aload " + reg + NL;
                 }
                 default -> throw new NotImplementedException("Unsupported type: " + operand.getType().getTypeOfElement());
@@ -535,8 +535,8 @@ public class JasminGenerator {
         if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
             // Only pop if the result is not used by a subsequent instruction
             if (usesResultOf(callInstruction)) {
-//                stackLimit--;
-//                updateStackLimit();
+                stackLimit--;
+                updateStackLimit();
                 code.append("pop").append(NL);
             }
         return code.toString();
@@ -547,13 +547,13 @@ public class JasminGenerator {
         // Adjust as needed based on your specific Operand handling logic
         switch (operand.getType().getTypeOfElement()) {
             case INT32:
-//                stackLimit++;
-//                updateStackLimit();
+                stackLimit++;
+                updateStackLimit();
                 return "iload " + operand.getParamId() + NL;
             case ARRAYREF:
             case OBJECTREF:
-//                stackLimit += ((ArrayType)operand.getType()).getNumDimensions();
-//                updateStackLimit();
+                stackLimit += ((ArrayType)operand.getType()).getNumDimensions();
+                updateStackLimit();
                 return "aload " + ((ArrayType)operand.getType()).getNumDimensions() + NL;
             // Add cases for other types as needed
             default:
@@ -598,6 +598,8 @@ public class JasminGenerator {
 
         var returnType = callInstruction.getReturnType();
         code.append(decideElementTypeForParamOrField(returnType));
+        stackLimit++;
+        updateStackLimit();
 
         return code.append("\n").toString();
     }
@@ -625,6 +627,8 @@ public class JasminGenerator {
 
         var returnType = callInstruction.getReturnType();
         code.append(decideElementTypeForParamOrField(returnType));
+        stackLimit++;
+        updateStackLimit();
 
         return code.append("\n").toString();
     }
@@ -650,6 +654,8 @@ public class JasminGenerator {
 
         var returnType = callInstruction.getReturnType();
         code.append(decideElementTypeForParamOrField(returnType));
+        stackLimit++;
+        updateStackLimit();
 
         return code.append("\n").toString();
     }
@@ -679,6 +685,8 @@ public class JasminGenerator {
 
         var returnType = callInstruction.getReturnType();
         code.append(decideElementTypeForParamOrField(returnType));
+        stackLimit++;
+        updateStackLimit();
 
         return code.append("\n").toString();
     }
