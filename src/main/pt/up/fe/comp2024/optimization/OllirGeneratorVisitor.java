@@ -200,9 +200,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 continue;
             }
             if (child.getKind().equals("AssignStmt")) {
-                //var childCode = visit(child);
-                //code.append(childCode);
-                //exprVisitor.visit(child);
                 var x = exprVisitor.visit(child);
                 code.append(x.getComputation());
             }
@@ -252,9 +249,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 aux++;
             }
         }
-        //if (aux == 0) {
-        //    code.append(" extends Object");
-        //}
 
         code.append(L_BRACKET);
 
@@ -278,39 +272,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
-    private String visitFunctionCall(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-
-        // Extract the function name (e.g., "println")
-        String functionName = node.get("value");
-
-        // Build the OLLIR instruction for the function call
-        code.append("invokestatic(");
-        String importFunc = node.getJmmChild(0).get("name");
-        code.append(importFunc); // No target object for static method call
-        code.append(", \"");
-        code.append(functionName); // Method name (e.g., "println")
-        code.append("\"");
-
-        // Extract and append the argument of the function call
-        for (int i = 1; i < node.getNumChildren(); i++) {
-            code.append(", ");
-            code.append(exprVisitor.visit(node.getJmmChild(i)).getCode());
-        }
-
-        code.append(").V");
-
-        return code.toString();
-    }
-
-    private boolean checkIfImport(String name) {
-        for (var importID : table.getImports()) {
-            if (importID.equals(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private String buildConstructor() {
 
