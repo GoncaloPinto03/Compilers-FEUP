@@ -1,20 +1,23 @@
 import ioPlus;
 class ArrayAccess {
 
-	public static void main(String[] args) {
-	    int[] a;
-        a = new int[5];
-        a[0] = 1;
+	public int foo(int[] a) {
+		int result;
+
+		result = a[0];
+		result = a[1] + a[2];
+		result = result + a[3];
+		result = 1 + a[4];
+
+	    a[0] = 1;
 		a[1] = 2;
 		a[2] = 3;
 		a[3] = 4;
 		a[4] = 5;
 
-        ioPlus.printResult(a[0]);
-        ioPlus.printResult(a[1]);
-        ioPlus.printResult(a[2]);
-        ioPlus.printResult(a[3]);
-        ioPlus.printResult(a[4]);
 
+		return result;
 	}
+
+
 }

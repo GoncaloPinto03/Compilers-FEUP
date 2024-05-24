@@ -42,6 +42,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(EXPR_STMT, this::visitExprStmt);
         addVisit(LENGTH, this::visitArrayLength);
         addVisit(ARRAY_ACCESS, this::visitArrayAccess);
+        addVisit(ARRAY_ASSIGN, this::visitArrayAssignmentStm);
         addVisit(BINARY_EXPR_AND, this::visitBinExprAnd);
         addVisit("This", this::visitThis);
         setDefaultVisit(this::defaultVisit);
@@ -318,12 +319,18 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     private OllirExprResult visitArrayDeclaration(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
+        StringBuilder temp = new StringBuilder();
+
+        temp.append(OptUtils.getTemp()).append(" := .").append(OptUtils.toOllirType(node)).append(SPACE);
+        temp.append(visit(node.getJmmChild(0)).getCode()).append(END_STMT);
+
+
         code.append("new(array, ");
-        code.append(visit(node.getJmmChild(0)).getCode());
+        code.append(OptUtils.getCurrentTemp()).append(".i32");
         code.append(").array.");
         code.append(OptUtils.toOllirType(node));
 
-        return new OllirExprResult(code.toString());
+        return new OllirExprResult(temp.toString(), code.toString());
     }
 
     private OllirExprResult visitIntegerLiteral(JmmNode node, Void unused) {
@@ -439,13 +446,64 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
 
     private OllirExprResult visitArrayAccess(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-        code.append(visit(node.getJmmChild(0)).getCode());
-        code.append("[");
-        code.append(visit(node.getJmmChild(1)).getCode());
-        code.append("]");
-        return new OllirExprResult(code.toString());
+        // Visitar as expressões para o array e o índice
+        var arrayExpr = visit(node.getJmmChild(0));
+        var indexExpr = visit(node.getJmmChild(1));
+
+        // Construir a string de computação para o acesso ao array
+        StringBuilder computation = new StringBuilder();
+        computation.append(arrayExpr.getComputation());
+        computation.append(indexExpr.getComputation());
+
+        // Gerar variáveis temporárias para expressões complexas se necessário
+        String arrayCode = arrayExpr.getCode();
+        if (arrayCode.contains("invokevirtual") || arrayCode.contains("invokestatic")) {
+            String arrayTemp = OptUtils.getTemp() + OptUtils.toOllirType(node.getJmmChild(0));
+            computation.append(arrayTemp).append(SPACE)
+                    .append(ASSIGN).append(OptUtils.toOllirType(node.getJmmChild(0))).append(SPACE)
+                    .append(arrayCode);
+            arrayCode = arrayTemp;
+        }
+
+        String indexCode = indexExpr.getCode();
+        if (indexCode.contains("invokevirtual") || indexCode.contains("invokestatic")) {
+            String indexTemp = OptUtils.getTemp() + OptUtils.toOllirType(node.getJmmChild(1));
+            computation.append(indexTemp).append(SPACE)
+                    .append(ASSIGN).append(OptUtils.toOllirType(node.getJmmChild(1))).append(SPACE)
+                    .append(indexCode);
+            indexCode = indexTemp;
+        }
+
+        // Criar uma variável temporária para armazenar o resultado do acesso ao array
+        String resultTemp = OptUtils.getTemp() + "." + OptUtils.toOllirType(node.getJmmChild(1));
+
+        // Construir o código OLLIR para o acesso ao array
+        StringBuilder ollirCode = new StringBuilder();
+        ollirCode.append(resultTemp).append(SPACE).append(ASSIGN).append(SPACE).append(".")
+                .append(OptUtils.toOllirType(node.getJmmChild(1))).append(SPACE)
+                .append(arrayCode).append("[").append(indexCode).append("]").append(".i32").append(END_STMT);
+
+        // Adicionar o código de computação
+        computation.append(ollirCode);
+
+        return new OllirExprResult(resultTemp, computation.toString());
     }
+
+    private OllirExprResult visitArrayAssignmentStm(JmmNode node, Void unused) {
+        // Visitar as expressões para o array e o índice
+        var arrayExpr = visit(node.getJmmChild(0));
+        var indexExpr = visit(node.getJmmChild(1));
+
+        // Construir a string de computação para a atribuição ao array
+        StringBuilder computation = new StringBuilder();
+
+        computation.append("a.array.i32[").append(arrayExpr.getCode()).append("]").append(".i32").append(ASSIGN).append(".i32").append(SPACE).append(indexExpr.getCode()).append(END_STMT);
+        //a.array.i32[0.i32].i32 :=.i32 1.i32;
+
+
+        return new OllirExprResult(computation.toString());
+    }
+
 
     private OllirExprResult visitThis(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
