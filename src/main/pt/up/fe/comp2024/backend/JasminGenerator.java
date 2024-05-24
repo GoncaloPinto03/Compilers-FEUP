@@ -222,8 +222,9 @@ public class JasminGenerator {
         code.append(returnType).append(NL);
 
 
-        int limitsStack = calculateStackLimit(method);
+//        int limitsStack = calculateStackLimit(method);
         int limitsLocals = calculateLocalsLimit(method);
+
         // Add limits
         code.append(TAB).append(".limit stack 99").append(NL);
         code.append(TAB).append(".limit locals ").append(limitsLocals).append(NL);
@@ -254,7 +255,7 @@ public class JasminGenerator {
         HashMap<String, Descriptor> varTable = method.getVarTable();
         boolean isStatic = method.isStaticMethod();
 
-        if (!isStatic)   // not main
+        if (!isStatic)   // instance method
             currentLocals = 0;
 
         // traverse the values to count the locals limit by comparing the current value with the virtual reg
@@ -267,39 +268,12 @@ public class JasminGenerator {
         return currentLocals + 1;
     }
 
-    private int calculateStackLimit(Method method) {
-        int maxStackDepth = 0;
-        int currentStackDepth = 0;
-
-        for (Instruction instruction : method.getInstructions()) {
-            if (instruction instanceof AssignInstruction) {
-                currentStackDepth += 1; // rhs expression result is pushed onto the stack
-            } else if (instruction instanceof CallInstruction) {
-                CallInstruction call = (CallInstruction) instruction;
-                int argCount = call.getOperands().size();
-                currentStackDepth += argCount; // each argument pushes an element onto the stack
-                currentStackDepth -= argCount; // method invocation pops arguments off the stack
-                currentStackDepth += 1; // method return value is pushed onto the stack
-            } else if (instruction instanceof SingleOpInstruction) {
-                currentStackDepth += 1; // operand is pushed onto the stack
-            } else if (instruction instanceof BinaryOpInstruction) {
-                currentStackDepth += 2; // both operands are pushed onto the stack
-                currentStackDepth -= 1; // binary operation pops two operands and pushes one result
-            } else if (instruction instanceof ReturnInstruction) {
-                currentStackDepth += 1; // return value is pushed onto the stack
-            }
-
-            if (currentStackDepth > maxStackDepth) {
-                maxStackDepth = currentStackDepth;
-            }
-        }
-
-        return maxStackDepth;
-    }
+//    private int calculateStackLimit(Method method) {
+//
+//    }
 
 
-
-    private String generateAssign(AssignInstruction assign) {
+        private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
