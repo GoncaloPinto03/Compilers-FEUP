@@ -273,50 +273,44 @@ public class JasminGenerator {
 //    }
 
 
-    private String generateAssign(AssignInstruction assign) {
+    private String  generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
-        // generate code for loading what's on the right
-        code.append(generators.apply(assign.getRhs()));
+        boolean isArrayIndex = false;
 
         // store value in the stack in destination
         var lhs = assign.getDest();
-        Instruction rhs = assign.getRhs();
 
-        if (rhs instanceof SingleOpInstruction && ((SingleOpInstruction) rhs).getSingleOperand().isLiteral()){
-            var literal = (LiteralElement) ((SingleOpInstruction) rhs).getSingleOperand();
-            if (literal.getType().getTypeOfElement() == ElementType.INT32) {
-                var value = Integer.parseInt(literal.getLiteral());
-                if (value >= 0 && value <= 5)
-                    code.append("iconst_" + value + NL);
-                else if (value >= -128 && value <= 127)
-                    code.append("bipush " + value + NL);
-                else if (value >= -32768 && value <= 32767)
-                    code.append("sipush " + value + NL);
-                else
-                    code.append("ldc " + value + NL);
+        var operand = (Operand) lhs;
+        var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
+
+
+        if(lhs instanceof ArrayOperand){
+            isArrayIndex = true;
+            code.append("aload ").append(reg).append(NL);
+            for(Element index : ((ArrayOperand) lhs).getIndexOperands()){
+                code.append(generators.apply(index));
             }
         }
 
-
-        var rhsType = rhs.getInstType();
-        System.out.println(rhsType);
+        code.append(generators.apply(assign.getRhs()));
 
         if (!(lhs instanceof Operand)) {
             throw new NotImplementedException(lhs.getClass());
         }
 
-        var operand = (Operand) lhs;
+        if(isArrayIndex)
+            code.append("iastore").append(NL);
+        else {
 
-        // get register
-        var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
-
-        switch (operand.getType().getTypeOfElement()) {
-            case INT32, BOOLEAN -> code.append("istore ").append(reg).append(NL);
-            case STRING, OBJECTREF, CLASS, THIS -> code.append("astore ").append(reg).append(NL);
-            case VOID -> code.append("store ").append(reg).append(NL);
-            case ARRAYREF -> code.append("astore ").append(reg).append(NL);
-            default -> throw new NotImplementedException("Unsupported assign type: " + operand.getType().getTypeOfElement());
+            switch (operand.getType().getTypeOfElement()) {
+                case INT32, BOOLEAN -> code.append("istore ").append(reg).append(NL);
+                case STRING, OBJECTREF, CLASS, THIS -> code.append("astore ").append(reg).append(NL);
+                case VOID -> code.append("store ").append(reg).append(NL);
+                case ARRAYREF -> code.append("astore ").append(reg).append(NL);
+                default ->
+                        throw new NotImplementedException("Unsupported assign type: " + operand.getType().getTypeOfElement());
+            }
         }
 
         return code.toString();
@@ -348,19 +342,23 @@ public class JasminGenerator {
     private String generateOperand(Operand operand) {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
+        if(operand instanceof ArrayOperand){
+            var arrayOperand = (ArrayOperand) operand;
+            var code = new StringBuilder();
+            code.append("aload ").append(reg).append(NL);
+            for(Element index : arrayOperand.getIndexOperands()){
+                code.append(generators.apply(index));
+            }
+            code.append("iaload ").append(NL);
+            return code.toString();
+        }else{
 
-//        String loadType = "";
-//        switch (operand.getType().getTypeOfElement()) {
-//            case INT32, BOOLEAN -> loadType = "iload " + reg + NL;
-//            case STRING, OBJECTREF -> loadType = "aload " + reg + NL;
-//            case THIS -> loadType = "aload_0 " + NL;
-//        }
-//        return loadType;
         return switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> "iload " + reg + NL;
             case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> "aload " + reg + NL;
             default -> throw new NotImplementedException("Unsupported type: " + operand.getType().getTypeOfElement());
         };
+        }
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
@@ -451,6 +449,7 @@ public class JasminGenerator {
             }
             case NEW -> {
                 if (operand.getName().equals("array")) {
+                    code.append(generators.apply(callInstruction.getOperands().get(1)));
                     code.append("newarray int").append(NL);
                 } else {
                     code.append("new ").append(getClassNameForElementType((ClassType) operand.getType())).append(NL).append("dup").append(NL);

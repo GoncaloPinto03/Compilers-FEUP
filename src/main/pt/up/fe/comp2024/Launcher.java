@@ -51,40 +51,42 @@ public class Launcher {
 
 //        // Code generation stage
 
-        OllirResult ollirResult = new OllirResult("import ioPlus;\n" +
-                "IfWhileNested {\n" +
+        OllirResult ollirResult = new OllirResult("import io;\n" +
                 "\n" +
-                "    .construct IfWhileNested().V {\n" +
-                "        invokespecial(this, \"<init>\").V;\n" +
-                "    }\n" +
+                "ArrayVarargs{\n" +
                 "\n" +
-                "    .method public func(a.i32).i32 {\n" +
-                "flag.bool :=.bool 1.bool;\n" +
-                "i.i32 :=.i32 0.i32;\n" +
-                "if (i.i32 <.bool a.i32) goto whilebody_1;\n" +
-                "goto endwhile_1;\n" +
-                "whilebody_1:\n" +
+                "   .construct ArrayVarargs().V {\n" +
+                "       invokespecial(this, \"<init>\").V;\n" +
+                "   }\n" +
                 "\n" +
-                "if (flag.bool) goto ifbody_0;\n" +
-                "    invokestatic(ioPlus, \"printResult\", 2.i32).V;\n" +
-                "goto endif_0;\n" +
-                "ifbody_0:\n" +
-                "    invokestatic(ioPlus, \"printResult\", 1.i32).V;\n" +
-                "endif_0:\n" +
-                "flag.bool :=.bool !.bool flag.bool;\n" +
-                "i.i32 :=.i32 i.i32 +.i32 1.i32;\n" +
-                "if (i.i32 <.bool a.i32) goto whilebody_1;\n" +
-                "endwhile_1:\n" +
-                "ret.i32 1.i32;\n" +
-                "    }\n" +
-                "    .method public static main(args.array.String).V {\n" +
-                "d.IfWhileNested :=.IfWhileNested new(IfWhileNested).IfWhileNested;\n" +
-                "invokespecial(d.IfWhileNested,\"<init>\").V;\n" +
-                "a.i32 :=.i32 invokevirtual(d.IfWhileNested, \"func\", 3.i32).i32;\n" +
+                "   .method public static main(args.array.String).V {\n" +
+                "      tmp0.ArrayVarargs :=.ArrayVarargs new(ArrayVarargs).ArrayVarargs;\n" +
+                "      invokespecial(tmp0.ArrayVarargs, \"<init>\").V;\n" +
+                "      a.ArrayVarargs :=.ArrayVarargs tmp0.ArrayVarargs;\n" +
+                "      invokevirtual(a.ArrayVarargs, \"bar\").i32;\n" +
+                "      ret.V ;\n" +
+                "   }\n" +
                 "\n" +
-                "ret.V;\n" +
-                "    }\n" +
+                "   .method foo(a.array.i32).i32 {\n" +
+                "      tmp1.i32 :=.i32 a.array.i32[0.i32].i32;\n" +
+                "      ret.i32 tmp1.i32;\n" +
+                "   }\n" +
                 "\n" +
+                "   .method bar().i32 {\n" +
+                "      tmp2.array.i32 :=.array.i32 new(array, 3.i32).array.i32;\n" +
+                "      __varargs_array_0.array.i32 :=.array.i32 tmp2.array.i32;\n" +
+                "      __varargs_array_0.array.i32[0.i32].i32 :=.i32 1.i32;\n" +
+                "      __varargs_array_0.array.i32[1.i32].i32 :=.i32 2.i32;\n" +
+                "      __varargs_array_0.array.i32[2.i32].i32 :=.i32 3.i32;\n" +
+                "      res.i32 :=.i32 invokevirtual(this.ArrayVarargs, \"foo\", __varargs_array_0.array.i32).i32;\n" +
+                "      invokestatic(io, \"println\", res.i32).V;\n" +
+                "      tmp3.array.i32 :=.array.i32 new(array, 1.i32).array.i32;\n" +
+                "      __varargs_array_1.array.i32 :=.array.i32 tmp3.array.i32;\n" +
+                "      __varargs_array_1.array.i32[0.i32].i32 :=.i32 4.i32;\n" +
+                "      res.i32 :=.i32 invokevirtual(this.ArrayVarargs, \"foo\", __varargs_array_1.array.i32).i32;\n" +
+                "      invokestatic(io, \"println\", res.i32).V;\n" +
+                "      ret.i32 res.i32;\n" +
+                "   }\n" +
                 "}", null);
         JasminBackendImpl jasminGen = new JasminBackendImpl();
         JasminResult jasminResult = jasminGen.toJasmin( ollirResult);
