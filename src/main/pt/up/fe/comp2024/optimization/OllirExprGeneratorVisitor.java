@@ -106,12 +106,10 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         var lhs = visit(node.getJmmChild(0));
         var rhs = visit(node.getJmmChild(1));
 
-        // Build the computation string for the AND operation
         StringBuilder computation = new StringBuilder();
         computation.append(lhs.getComputation());
         computation.append(rhs.getComputation());
 
-        // Generate temporary variables for complex expressions if necessary
         String lhsCode = lhs.getCode();
         if (lhsCode.contains("invokevirtual") || lhsCode.contains("invokestatic")) {
             String lhsTemp = OptUtils.getTemp() + OptUtils.toOllirType(node.getJmmChild(0));
@@ -130,10 +128,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             rhsCode = rhsTemp;
         }
 
-        // Create a temporary variable to hold the result of the AND operation
         String resultTemp = OptUtils.getTemp() + ".bool";
 
-        // Build the OLLIR code for the AND operation
         StringBuilder ollirCode = new StringBuilder();
         ollirCode.append("if (").append(lhsCode).append(") goto ").append(OptUtils.getAndTrue()).append(";\n");
         ollirCode.append(resultTemp).append(SPACE).append(ASSIGN).append(".bool 0.bool;\n");
@@ -161,11 +157,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         StringBuilder computation = new StringBuilder();
 
-        // Compute code for children
         computation.append(lhs.getComputation());
         computation.append(rhs.getComputation());
 
-        // Generate temporary variables for complex expressions if necessary
         if (!node.getJmmChild(1).getKind().equals("NewClass")) {
             lhsCode = lhs.getCode();
         }
@@ -186,11 +180,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             rhsCode = rhsTemp;
         }
 
-        // Type of the left-hand side
         Type thisType = TypeUtils.getExprType(node.getJmmChild(0), table);
         String typeString = OptUtils.toOllirType(thisType);
 
-        // Generate the assignment code
         StringBuilder code = new StringBuilder();
         code.append(lhsCode).append(SPACE)
                 .append(ASSIGN).append(typeString).append(SPACE)
@@ -209,7 +201,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         JmmNode receiverNode = node.getJmmChild(0);
         boolean isStatic = false;
 
-        // Compute the receiver of the method call
         String receiverCode;
         if (receiverNode.getAttributes().contains("name")) {
             String receiverName = receiverNode.get("name");
@@ -227,7 +218,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             }
         }
 
-        // Generate temporary variable for receiver if necessary
         if (receiverCode.contains("invokevirtual") || receiverCode.contains("invokestatic")) {
             String receiverTemp = OptUtils.getTemp() + OptUtils.toOllirType(receiverNode);
             computation.append(receiverTemp).append(SPACE)
@@ -236,7 +226,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             receiverCode = receiverTemp;
         }
 
-        // Determine whether to use invokevirtual or invokestatic
         if (isStatic) {
             code.append("invokestatic(").append(receiverCode);
         } else {
@@ -431,22 +420,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code.toString());
     }
 
-    private OllirExprResult visitLength(JmmNode node, Void unused) {
-        if (!isVariableOrFunc(node)) {
-            StringBuilder code = new StringBuilder();
-            code.append(OptUtils.getTemp()).append(".i32").append(" := ").append(".i32");
-            code.append(" arraylength(");
-            code.append(visit(node.getJmmChild(0)).getCode());
-            code.append(").i32").append(END_STMT);
-            return new OllirExprResult(code.toString());
-        } else {
-            StringBuilder code = new StringBuilder();
-            code.append("arraylength(");
-            code.append(visit(node.getJmmChild(0)).getCode());
-            code.append(").i32");
-            return new OllirExprResult(code.toString());
-        }
-    }
 
     private OllirExprResult visitArrayLength(JmmNode node, Void unused) {
         // Assuming you have this method for array length handling
@@ -459,16 +432,13 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
 
     private OllirExprResult visitArrayAccess(JmmNode node, Void unused) {
-        // Visitar as expressões para o array e o índice
         var arrayExpr = visit(node.getJmmChild(0));
         var indexExpr = visit(node.getJmmChild(1));
 
-        // Construir a string de computação para o acesso ao array
         StringBuilder computation = new StringBuilder();
         computation.append(arrayExpr.getComputation());
         computation.append(indexExpr.getComputation());
 
-        // Gerar variáveis temporárias para expressões complexas se necessário
         String arrayCode = arrayExpr.getCode();
         if (arrayCode.contains("invokevirtual") || arrayCode.contains("invokestatic")) {
             String arrayTemp = OptUtils.getTemp() + OptUtils.toOllirType(node.getJmmChild(0));
@@ -486,24 +456,24 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                     .append(indexCode);
             indexCode = indexTemp;
         }
-
-        // Criar uma variável temporária para armazenar o resultado do acesso ao array
-        String resultTemp = OptUtils.getTemp() + "." + OptUtils.toOllirType(node.getJmmChild(1));
-
-        // Construir o código OLLIR para o acesso ao array
+        String resultTemp = new String();
         StringBuilder ollirCode = new StringBuilder();
-        ollirCode.append(resultTemp).append(SPACE).append(ASSIGN).append(SPACE).append(".")
-                .append(OptUtils.toOllirType(node.getJmmChild(1))).append(SPACE)
-                .append(arrayCode).append("[").append(indexCode).append("]").append(".i32").append(END_STMT);
+        if (!node.getJmmChild(1).getKind().equals("BinaryExpr")) {
+            resultTemp = OptUtils.getTemp() + "." + OptUtils.toOllirType(node.getJmmChild(1));
 
-        // Adicionar o código de computação
+            ollirCode = new StringBuilder();
+            ollirCode.append(resultTemp).append(SPACE).append(ASSIGN).append(SPACE).append(".")
+                    .append(OptUtils.toOllirType(node.getJmmChild(1))).append(SPACE)
+                    .append(arrayCode).append("[").append(indexCode).append("]").append(".i32").append(END_STMT);
+
+        }
         computation.append(ollirCode);
 
         return new OllirExprResult(resultTemp, computation.toString());
     }
 
     private OllirExprResult visitArrayAssignmentStm(JmmNode node, Void unused) {
-        // Visitar as expressões para o array e o índice
+
         var arrayExpr = visit(node.getJmmChild(0));
         var indexExpr = visit(node.getJmmChild(1));
 
@@ -511,8 +481,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         StringBuilder computation = new StringBuilder();
 
         computation.append("a.array.i32[").append(arrayExpr.getCode()).append("]").append(".i32").append(ASSIGN).append(".i32").append(SPACE).append(indexExpr.getCode()).append(END_STMT);
-        //a.array.i32[0.i32].i32 :=.i32 1.i32;
-
 
         return new OllirExprResult(computation.toString());
     }
@@ -524,9 +492,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         return new OllirExprResult(code.toString());
     }
 
-    private boolean isVariableOrFunc(JmmNode jmmNode){
-        return jmmNode.getKind().equals("Parentesis") || jmmNode.getKind().equals("NewClass") || jmmNode.getKind().equals("Negation") || jmmNode.getKind().equals("BinaryExpr") || jmmNode.getKind().equals("ArrayLiteral") || jmmNode.getKind().equals("VarRefExpr") || jmmNode.getKind().equals("MethodCall") || jmmNode.getKind().equals("IntegerLiteral") || jmmNode.getKind().equals("This") || (jmmNode.getKind().equals("Identifier") && jmmNode.get("field").equals("false"));
-    }
 
     private boolean checkIfImport(String name) {
         for (var importID : table.getImports()) {

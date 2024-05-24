@@ -32,10 +32,6 @@ public class JasminTest {
     public void ollirToJasminArithmetics() {
         testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/OllirToJasminArithmetics.ollir");
     }
-    @Test
-    public void myTest() {
-        testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/test.ollir");
-    }
 
     @Test
     public void ollirToJasminInvoke() {
@@ -46,42 +42,6 @@ public class JasminTest {
     public void ollirToJasminFields() {
         testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/OllirToJasminFields.ollir");
     }
-
-//    @Test
-//    public void t() {
-//        var jasminCode= ".class Test\n" +
-//                ".super java/lang/Object\n" +
-//                ";default constructor\n" +
-//                ".method public <init>()V\n" +
-//                "    aload_0\n" +
-//                "    invokespecial java/lang/Object/<init>()V\n" +
-//                "    return\n" +
-//                ".end method\n" +
-//                ".method public static main([Ljava/lang/String;)V\n" +
-//                "   .limit stack 99\n" +
-//                "   .limit locals 99\n" +
-//                "   \n" +
-//                "   return\n" +
-//                ".end method\n" +
-//                ".method public foo()I\n" +
-//                "   .limit stack 99\n" +
-//                "   .limit locals 99\n" +
-//                "   ldc 1\n" +
-//                "   istore 1\n" +
-//                "   ldc 2\n" +
-//                "   istore 2\n" +
-//                "   iload 1\n" +
-//                "   iload 2\n" +
-//                "   iadd\n" +
-//                "   istore 3\n" +
-//                "   iload 3\n" +
-//                "   \n" +
-//                "   ireturn\n" +
-//                ".end method";
-//
-//        new JasminResult(jasminCode).run();
-//    }
-
 
     public static void testOllirToJasmin(String resource, String expectedOutput) {
         JasminResult result = null;

@@ -77,7 +77,6 @@ public class JasminGenerator {
 
     public String build() {
 
-        // This way, build is idempotent
         if (code == null) {
             code = generators.apply(ollirResult.getOllirClass());
         }
@@ -163,20 +162,14 @@ public class JasminGenerator {
             code.append(";default constructor");
         }
 
-        // generate code for all other methods
         for (var method : classUnit.getMethods()) {
 
-            // Ignore constructor, since there is always one constructor
-            // that receives no arguments, and has been already added
-            // previously
             if (method.isConstructMethod()) {
                 continue;
             }
 
             code.append(generators.apply(method));
         }
-
-        // generate a single constructor method
 
         var defaultConstructor = """
                 .method public <init>()V
@@ -252,7 +245,6 @@ public class JasminGenerator {
 
         code.append(".end method\n");
 
-        // unset method
         currentMethod = null;
 
         return code.toString();
@@ -260,68 +252,24 @@ public class JasminGenerator {
 
 
     public static int calculateLocalsLimit(Method method) {
-        // Determine the initial max locals value based on whether the method is static or not
         int maxLocals = method.isStaticMethod() ? -1 : 0;
 
-        // Get the variable table from the method
         HashMap<String, Descriptor> varTable = method.getVarTable();
 
-        // Traverse the values to find the highest virtual register index
         for (Descriptor descriptor : varTable.values()) {
             int virtualReg = descriptor.getVirtualReg();
             maxLocals = Math.max(maxLocals, virtualReg);
         }
 
-        // Add 1 to account for zero-based index (and possibly for the 'this' reference in instance methods)
         return maxLocals + 1;
     }
 
-
-//    private int calculateStackLimit(Method method) {
-//        int maxStackDepth = 0;
-//        int currentStackDepth = 0;
-//
-//        for (Instruction instruction : method.getInstructions()) {
-//            if (instruction instanceof AssignInstruction) {
-//                currentStackDepth += 1; // Right-hand side expression result is pushed onto the stack
-//                currentStackDepth -= 1; // Assigning the result involves popping it off the stack
-//            } else if (instruction instanceof CallInstruction) {
-//                CallInstruction call = (CallInstruction) instruction;
-//                int argCount = call.getOperands().size();
-//
-//                // Assuming first operand is the method reference for instance methods
-//                if (!method.isStaticMethod()) {
-//                    argCount += 1; // `this` reference
-//                }
-//
-//                currentStackDepth -= argCount; // Arguments (and possibly `this`) are popped off the stack
-//
-//                if (!call.getReturnType().equals("void")) {
-//                    currentStackDepth += 1; // Return value is pushed onto the stack
-//                }
-//            } else if (instruction instanceof SingleOpInstruction) {
-//                currentStackDepth += 1; // Operand is pushed onto the stack
-//            } else if (instruction instanceof BinaryOpInstruction) {
-//                currentStackDepth -= 1; // Two operands are popped, one result is pushed (net effect -1)
-//            } else if (instruction instanceof ReturnInstruction) {
-//                // Return instruction typically involves popping the return value off the stack
-//                currentStackDepth = 0; // Assume stack is empty after method returns
-//            }
-//
-//            if (currentStackDepth > maxStackDepth) {
-//                maxStackDepth = currentStackDepth;
-//            }
-//        }
-//
-//        return maxStackDepth;
-//    }
 
     private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
         boolean isArrayIndex = false;
 
-        // store value in the stack in destination
         var lhs = assign.getDest();
 
         var operand = (Operand) lhs;
@@ -348,13 +296,9 @@ public class JasminGenerator {
             switch (operand.getType().getTypeOfElement()) {
                 case INT32, BOOLEAN -> {
                     code.append("istore ").append(reg).append(NL);
-//                    stackLimit--;
-//                    updateStackLimit();
                 }
                 case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> {
                     code.append("astore ").append(reg).append(NL);
-//                    stackLimit--;
-//                    updateStackLimit();
                 }
                 case VOID -> code.append("store ").append(reg).append(NL);
                 default ->
@@ -374,31 +318,23 @@ public class JasminGenerator {
             case INT32 -> {
                 int value = Integer.parseInt(literal.getLiteral());
                 if (value >= 0 && value <= 5) {
-//                    stackLimit++;
-//                    updateStackLimit();
+
                     yield "iconst_" + value + NL;
                 } else if (value >= -128 && value <= 127) {
-//                    stackLimit++;
-//                    updateStackLimit();
+
                     yield "bipush " + value + NL;
                 } else if (value >= -32768 && value <= 32767) {
-//                    stackLimit++;
-//                    updateStackLimit();
+
                     yield "sipush " + value + NL;
                 } else {
-//                    stackLimit++;
-//                    updateStackLimit();
+
                     yield "ldc " + value + NL;
                 }
             }
             case BOOLEAN -> {
-//                stackLimit++;
-//                updateStackLimit();
                 yield literal.getLiteral().equals("1") ? "iconst_1" + NL : "iconst_0" + NL;
             }
             case STRING -> {
-//                stackLimit++;
-//                updateStackLimit();
                 yield "ldc \"" + literal.getLiteral() + "\"" + NL;
             }
             default -> throw new NotImplementedException(literal.getType().getTypeOfElement());
@@ -420,13 +356,11 @@ public class JasminGenerator {
         } else{
             return switch (operand.getType().getTypeOfElement()) {
                 case INT32, BOOLEAN -> {
-//                    stackLimit++;
-//                    updateStackLimit();
+
                     yield "iload " + reg + NL;
                 }
                 case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> {
-//                    stackLimit++;
-//                    updateStackLimit();
+
                     yield "aload " + reg + NL;
                 }
                 default -> throw new NotImplementedException("Unsupported type: " + operand.getType().getTypeOfElement());
@@ -531,35 +465,13 @@ public class JasminGenerator {
 
         }
 
-        // handle special case of VOID
         if (!callInstruction.getReturnType().getTypeOfElement().equals(ElementType.VOID))
-            // Only pop if the result is not used by a subsequent instruction
             if (usesResultOf(callInstruction)) {
-//                stackLimit--;
-//                updateStackLimit();
                 code.append("pop").append(NL);
             }
         return code.toString();
     }
 
-    private String generateLoadOperand(Operand operand) {
-        // Assuming a simple case where the operand is a local variable
-        // Adjust as needed based on your specific Operand handling logic
-        switch (operand.getType().getTypeOfElement()) {
-            case INT32:
-//                stackLimit++;
-//                updateStackLimit();
-                return "iload " + operand.getParamId() + NL;
-            case ARRAYREF:
-            case OBJECTREF:
-//                stackLimit += ((ArrayType)operand.getType()).getNumDimensions();
-//                updateStackLimit();
-                return "aload " + ((ArrayType)operand.getType()).getNumDimensions() + NL;
-            // Add cases for other types as needed
-            default:
-                throw new IllegalArgumentException("Unsupported operand type: " + operand.getType().getTypeOfElement());
-        }
-    }
     private boolean usesResultOf(Instruction inst) {
         if (currentMethod == null) {
             return false;
@@ -654,7 +566,6 @@ public class JasminGenerator {
         return code.append("\n").toString();
     }
 
-    // A special case is invokeinterface, which takes a <method-spec> and an integer indicating how many arguments the method takes
     private String invokeInterface(CallInstruction callInstruction) {
         var code = new StringBuilder();
         int numArgs = callInstruction.getArguments().size();
@@ -675,25 +586,12 @@ public class JasminGenerator {
             var elementType = element.getType();
             code.append(decideElementTypeForParamOrField(elementType));
         }
-        code.append(")").append(" ").append(numArgs + 1); // +1 to include "this"
+        code.append(")").append(" ").append(numArgs + 1);
 
         var returnType = callInstruction.getReturnType();
         code.append(decideElementTypeForParamOrField(returnType));
 
         return code.append("\n").toString();
-    }
-
-    private String generateArrayLength(Instruction arrayLengthInstruction) {
-        StringBuilder code = new StringBuilder();
-
-        // Assume arrayRefInstruction is an instruction that generates code to load the array reference onto the stack
-        Element arrayRefInstruction = ((UnaryOpInstruction) arrayLengthInstruction).getOperand();
-        // Generate code to load the array reference
-        code.append(generators.apply(arrayRefInstruction));
-
-        code.append("arraylength").append(NL);
-
-        return code.toString();
     }
 
     private String generatePutField(PutFieldInstruction putFieldInstruction) {
