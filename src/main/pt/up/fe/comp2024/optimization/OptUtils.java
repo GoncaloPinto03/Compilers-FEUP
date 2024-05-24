@@ -12,20 +12,20 @@ import java.util.Optional;
 import static pt.up.fe.comp2024.ast.Kind.TYPE;
 
 public class OptUtils {
-    private static int tempNumber = -1;
+    private static int tempNumber = 0;
 
-    private static int ifLabel = -1;
+    private static int ifLabel = 0;
 
-    private static int endIfLabel = -1;
+    private static int endIfLabel = 0;
 
-    private static int whileCondLabel = -1;
-    private static int whileLoopLabel = -1;
+    private static int whileCondLabel = 0;
+    private static int whileLoopLabel = 0;
 
-    private static int whileEndLabel = -1;
+    private static int whileEndLabel = 0;
 
-    private static int and_true = -1;
+    private static int and_true = 0;
 
-    private static int and_end = -1;
+    private static int and_end = 0;
 
     public static String getTemp() {
 

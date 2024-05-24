@@ -329,8 +329,9 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                         .append(ASSIGN).append(OptUtils.toOllirType(argNode)).append(SPACE)
                         .append(argCode).append(END_STMT);
                 argCode = argTemp;
+                code.insert(0, argResult.getComputation());
             }
-            code.insert(0, argResult.getComputation());
+            //code.insert(0, argResult.getComputation());
             code.append(argCode);
         }
 
