@@ -90,13 +90,13 @@ statement
     | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
     | expression ';' #exprStmt
     | expression '=' expression ';' #assignStmt
-    | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
     ;
 
 expression
     : LPAREN expression RPAREN  #Parentesis
     | 'new' 'int' LRECT expression RRECT #ArrayDeclaration
     | 'new' value=(ID | 'main' | 'length') LPAREN (expression (',' expression) *)? RPAREN  #NewClass
+    | expression LRECT expression RRECT #arrayAccess
     | expression '.' value=(ID | 'main' | 'length')  LPAREN (expression (',' expression)*)? RPAREN #MethodCall
     | expression '.' 'length' #Length
     | 'this' #This
