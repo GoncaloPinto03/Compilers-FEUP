@@ -40,7 +40,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(IDENTIFIER, this::visitIdentifier);
         addVisit(NEGATION, this::visitNegation);
         addVisit(EXPR_STMT, this::visitExprStmt);
-        addVisit(LENGTH, this::visitLength);
+        addVisit(LENGTH, this::visitArrayLength);
         addVisit(ARRAY_ACCESS, this::visitArrayAccess);
         addVisit(BINARY_EXPR_AND, this::visitBinExprAnd);
         addVisit("This", this::visitThis);
@@ -330,6 +330,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                         .append(argCode).append(END_STMT);
                 argCode = argTemp;
             }
+            code.insert(0, argResult.getComputation());
             code.append(argCode);
         }
 
@@ -515,6 +516,16 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             return new OllirExprResult(code.toString());
         }
     }
+
+    private OllirExprResult visitArrayLength(JmmNode node, Void unused) {
+        // Assuming you have this method for array length handling
+        String arrayCode = visit(node.getJmmChild(0)).getCode();
+        String temp = OptUtils.getTemp() + ".i32";
+        StringBuilder computation = new StringBuilder();
+        computation.append(temp).append(" :=.i32 arraylength(").append(arrayCode).append(").i32;\n");
+        return new OllirExprResult(temp, computation.toString());
+    }
+
 
     private OllirExprResult visitArrayAccess(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
