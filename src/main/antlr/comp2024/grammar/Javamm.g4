@@ -89,8 +89,8 @@ statement
     | 'while' LPAREN expression RPAREN statement #WhileStm
     | 'for' '(' statement expression ';' expression ')' statement #FOR_STM
     | expression ';' #exprStmt
+    | var=ID LRECT expression RRECT '=' expression ';' #arrayAssign
     | expression '=' expression ';' #assignStmt
-    | var=ID LRECT expression RRECT '=' expression ';' #ARRAY_ASSIGNMENT_STM
     ;
 
 expression
