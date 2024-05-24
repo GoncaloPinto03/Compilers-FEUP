@@ -246,7 +246,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Void visitIfStm(JmmNode node, SymbolTable table) {
         JmmNode expr = node.getChild(0);
-        JmmNode stmt = node.getChild(1);
 
         Type exprType = TypeUtils.getExprType(expr, table);
         if(exprType.isArray() || !exprType.getName().equals("boolean")){
@@ -288,7 +287,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Set <String> paramsSet = new HashSet<>();
         localVariables.clear();
 
-        Type retType = table.getReturnType(currentMethod);
         if(method.getChild(0).getKind().equals("VARARG")){
             String message = "Invalid return type: cannot return VARARG";
             addReport(Report.newError(
@@ -355,7 +353,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
                     pos = method.getChildren().indexOf(paramsAux)-1;
                 }
             }
-            //JmmNode lastParamNode = method.getChild(method.getChildren().size()-1);
             if (method.getChildren("ParamDeclaration").size() - 1 != pos) {
                 String message = "Vararg must be the last parameter";
                 addReport(Report.newError(
@@ -369,7 +366,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         }
 
-        // check if method is imported or extemded
+        // check if method is imported or extended
         if (table.getMethods().contains(currentMethod) || table.getImports().contains(currentMethod)) {
             return null;
         } else {
@@ -394,13 +391,13 @@ public class UndeclaredVariable extends AnalysisVisitor {
         // Check if the variable is a local variable
         if (table.getLocalVariables(currentMethod).stream()
                 .anyMatch(varDecl -> varDecl.getName().equals(varRefName))) {
-            return null; // Variable is a local variable, return
+            return null;
         }
 
         // Check if the variable is a parameter
         if (table.getParameters(currentMethod).stream()
                 .anyMatch(param -> param.getName().equals(varRefName))) {
-            return null; // Variable is a parameter, return
+            return null;
         }
 
         // Check if the variable is a field
@@ -415,14 +412,14 @@ public class UndeclaredVariable extends AnalysisVisitor {
                         null)
                 );
             }
-            return null; // Variável é um campo, retornar
+            return null;
         }
 
 
         // Check if the variable is an imported class or package
         if (table.getImports().stream()
                 .anyMatch(importDecl -> importDecl.endsWith(varRefName))) {
-            return null; // Variable is an imported class or package, return
+            return null;
         }
 
 
@@ -438,7 +435,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         return null;
     }
-
 
     private Void visitNegation (JmmNode node, SymbolTable table){
         JmmNode exp = node.getChildren().get(0);
@@ -458,12 +454,11 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
     private Void visitArrayLiteral(JmmNode arrayLiteral, SymbolTable table) {
-        // Get the expected type of the array elements (assuming it's the type of the first element)
-        // This part might need to be adjusted based on how you're handling type information in your AST
-        if (arrayLiteral.getNumChildren() == 0) return null; // Handle empty array initializations gracefully
 
-        JmmNode lhsNode = arrayLiteral.getChildren().get(0); // Assuming left-hand side is the first child
-        JmmNode rhsNode = arrayLiteral.getChildren().get(1); // Assuming right-hand side is the second child
+        if (arrayLiteral.getNumChildren() == 0) return null;
+
+        JmmNode lhsNode = arrayLiteral.getChildren().get(0);
+        JmmNode rhsNode = arrayLiteral.getChildren().get(1);
 
         Type lhsType = TypeUtils.getExprType(lhsNode, table);
         Type rhsType = TypeUtils.getExprType(rhsNode, table);
@@ -509,7 +504,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null;
         }
 
-        // Check if types are compatible for other cases (e.g., variable assignment)
         if (!TypeUtils.areTypesAssignable(rhsType, lhsType)) {
             String message = String.format("Type mismatch: cannot assign %s to %s", rhsType, lhsType);
             addReport(Report.newError(
@@ -573,7 +567,6 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
     private Void visitWhileStm (JmmNode node, SymbolTable table){
         JmmNode expr = node.getChild(0);
-        JmmNode stmt = node.getChild(1);
 
         Type exprType = TypeUtils.getExprType(expr, table);
 
@@ -612,11 +605,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
         Type leftType = TypeUtils.getExprType(leftExpr, table);
         Type rightType = TypeUtils.getExprType(rightExpr, table);
 
-        // Get the operator type to handle different binary operations
         String operator = node.get("op");
 
         if (leftType == null || rightType == null) {
-            // If either type is null, we can't do type checking
             return null;
         }
 
@@ -784,15 +775,12 @@ public class UndeclaredVariable extends AnalysisVisitor {
         String methodName = method.get("value");
 
         for (String importedClass : table.getImports()) {
-            // Divide o nome do import em partes usando o '.' como delimitador
             String[] parts = importedClass.split("\\.");
 
-            // Pega apenas o último elemento da lista de partes
             String lastPart = parts[parts.length - 1];
 
-            // Verifica se o último elemento do import é igual ao nome do método
             if (lastPart.equals(methodName)) {
-                return null; // O último elemento do import é igual ao nome do método, não há problema
+                return null;
             }
         }
 
