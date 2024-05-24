@@ -9,9 +9,12 @@ import pt.up.fe.specs.util.exceptions.NotImplementedException;
 import pt.up.fe.specs.util.utilities.StringLines;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static org.specs.comp.ollir.OperationType.*;
 
 
 /**
@@ -54,6 +57,16 @@ public class JasminGenerator {
         generators.put(CallInstruction.class, this::generateCall);
         generators.put(PutFieldInstruction.class, this::generatePutField);
         generators.put(GetFieldInstruction.class, this::generateGetField);
+        generators.put(GotoInstruction.class, inst -> "goto " + ((GotoInstruction) inst).getLabel() + NL);
+        generators.put(CondBranchInstruction.class, this::generateCondBranch);
+        generators.put(UnaryOpInstruction.class, inst -> {
+            var unaryOp = (UnaryOpInstruction) inst;
+            var code = new StringBuilder();
+            code.append(generators.apply(unaryOp.getOperand()));
+            code.append("iconst_1").append(NL);
+            code.append("ixor").append(NL);
+            return code.toString();
+        });
     }
 
     public List<Report> getReports() {
@@ -70,6 +83,33 @@ public class JasminGenerator {
         return code;
     }
 
+    private String generateCondBranch(CondBranchInstruction condBranchInstruction) {
+        var code = new StringBuilder();
+
+        code.append(generators.apply(condBranchInstruction.getOperands().get(0)));
+        if (condBranchInstruction.getCondition() instanceof BinaryOpInstruction) {
+            code.append(generators.apply(condBranchInstruction.getOperands().get(1)));
+
+            ((BinaryOpInstruction) condBranchInstruction.getCondition()).getOperation().getOpType();
+
+            var op = switch (((BinaryOpInstruction) condBranchInstruction.getCondition()).getOperation().getOpType()) {
+                case LTH -> "if_icmplt";
+                case GTH -> "if_icmpgt";
+                case EQ -> "if_icmpeq";
+                case NEQ -> "if_icmpne";
+                case LTE -> "if_icmple";
+                case GTE -> "if_icmpge";
+                default -> throw new NotImplementedException(((BinaryOpInstruction) condBranchInstruction.getCondition()).getOperation().getOpType());
+            };
+
+            code.append(op).append(" ").append(condBranchInstruction.getLabel()).append(NL);
+        }
+        else if (condBranchInstruction.getCondition() instanceof SingleOpInstruction) {
+            code.append("ifne ").append(condBranchInstruction.getLabel()).append(NL);
+        }
+
+        return code.toString();
+    }
 
     private String generateClassUnit(ClassUnit classUnit) {
 
@@ -168,10 +208,6 @@ public class JasminGenerator {
         for (Element argument : method.getParams()) {
             String elementType = decideElementTypeForParamOrField(argument.getType());
 
-//            if (argument.getType().getTypeOfElement().toString().equals("STRING"))
-//                elementType = "Ljava/lang/String;";
-//            if (argument.getType().getTypeOfElement().toString().equals("ARRAYREF"))
-//                elementType = "[Ljava/lang/String;";
 
             code.append(elementType);
             if (argument.getType().getTypeOfElement().equals(ElementType.OBJECTREF))
@@ -182,18 +218,22 @@ public class JasminGenerator {
 
         var returnType = decideElementTypeForParamOrField(method.getReturnType());
 
-//        if (method.getReturnType().getTypeOfElement().toString().equals("STRING"))
-//            returnType = "Ljava/lang/String;";
-//        if (method.getReturnType().getTypeOfElement().toString().equals("ARRAYREF"))
-//            returnType = "[Ljava/lang/String;";
 
         code.append(returnType).append(NL);
 
+
+//        int limitsStack = calculateStackLimit(method);
+        int limitsLocals = calculateLocalsLimit(method);
+
         // Add limits
         code.append(TAB).append(".limit stack 99").append(NL);
-        code.append(TAB).append(".limit locals 99").append(NL);
-
+        code.append(TAB).append(".limit locals ").append(limitsLocals).append(NL);
+        var label = "";
         for (var inst : method.getInstructions()) {
+            for (var labels : method.getLabels(inst)) {
+                label = labels;
+                code.append(label).append(":").append(NL);
+            }
             var instCode = StringLines.getLines(generators.apply(inst)).stream()
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
@@ -208,7 +248,32 @@ public class JasminGenerator {
         return code.toString();
     }
 
-    private String generateAssign(AssignInstruction assign) {
+
+    public static int calculateLocalsLimit(Method method) {
+        // need to compute the max value used in the registers
+        int currentLocals = -1;
+        HashMap<String, Descriptor> varTable = method.getVarTable();
+        boolean isStatic = method.isStaticMethod();
+
+        if (!isStatic)   // instance method
+            currentLocals = 0;
+
+        // traverse the values to count the locals limit by comparing the current value with the virtual reg
+        for (Descriptor desc : varTable.values()) {
+            var descVirtualReg = desc.getVirtualReg();
+            currentLocals = Math.max(currentLocals, descVirtualReg);
+        }
+
+        // +1 because of this
+        return currentLocals + 1;
+    }
+
+//    private int calculateStackLimit(Method method) {
+//
+//    }
+
+
+        private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -241,20 +306,40 @@ public class JasminGenerator {
     }
 
     private String generateLiteral(LiteralElement literal) {
-        return "ldc " + literal.getLiteral() + NL;
+        return switch (literal.getType().getTypeOfElement()) {
+            case INT32 -> {
+                int value = Integer.parseInt(literal.getLiteral());
+                if (value >= 0 && value <= 5)
+                    yield "iconst_" + value + NL;
+                else if (value >= -128 && value <= 127)
+                    yield "bipush " + value + NL;
+                else if (value >= -32768 && value <= 32767)
+                    yield "sipush " + value + NL;
+                else
+                    yield "ldc " + value + NL;
+            }
+            case BOOLEAN -> literal.getLiteral().equals("1") ? "iconst_1" + NL : "iconst_0" + NL;
+            case STRING -> "ldc \"" + literal.getLiteral() + "\"" + NL;
+            default -> throw new NotImplementedException(literal.getType().getTypeOfElement());
+        };
     }
 
     private String generateOperand(Operand operand) {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
-        String loadType = "";
-        switch (operand.getType().getTypeOfElement()) {
-            case INT32, BOOLEAN -> loadType = "iload " + reg + NL;
-            case STRING, OBJECTREF -> loadType = "aload " + reg + NL;
-            case THIS -> loadType = "aload_0 " + NL;
-        }
-        return loadType;
+//        String loadType = "";
+//        switch (operand.getType().getTypeOfElement()) {
+//            case INT32, BOOLEAN -> loadType = "iload " + reg + NL;
+//            case STRING, OBJECTREF -> loadType = "aload " + reg + NL;
+//            case THIS -> loadType = "aload_0 " + NL;
+//        }
+//        return loadType;
+        return switch (operand.getType().getTypeOfElement()) {
+            case INT32, BOOLEAN -> "iload " + reg + NL;
+            case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> "aload " + reg + NL;
+            default -> throw new NotImplementedException("Unsupported type: " + operand.getType().getTypeOfElement());
+        };
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
@@ -331,7 +416,7 @@ public class JasminGenerator {
     }
 
     private String generateCall(CallInstruction callInstruction) {
-        var code  = new StringBuilder();
+        var code = new StringBuilder();
         var operand = (Operand) callInstruction.getOperands().get(0);
 
         switch (callInstruction.getInvocationType()) {
@@ -339,7 +424,19 @@ public class JasminGenerator {
             case invokevirtual -> code.append(invokeVirtual(callInstruction));
             case invokestatic -> code.append(invokeStatic(callInstruction));
             case invokeinterface -> code.append(invokeInterface(callInstruction));
-            case NEW -> code.append("new ").append(getClassNameForElementType((ClassType) operand.getType())).append(NL).append("dup").append(NL);
+            case arraylength -> {
+                // Load the array reference onto the stack
+                code.append(generateLoadOperand(operand));
+                code.append("arraylength").append(NL);
+            }
+            case NEW -> {
+                if (operand.getName().equals("array")) {
+                    code.append("newarray int").append(NL);
+                } else {
+                    code.append("new ").append(getClassNameForElementType((ClassType) operand.getType())).append(NL).append("dup").append(NL);
+                }
+            }
+
         }
 
         // handle special case of VOID
@@ -351,6 +448,20 @@ public class JasminGenerator {
         return code.toString();
     }
 
+    private String generateLoadOperand(Operand operand) {
+        // Assuming a simple case where the operand is a local variable
+        // Adjust as needed based on your specific Operand handling logic
+        switch (operand.getType().getTypeOfElement()) {
+            case INT32:
+                return "iload " + operand.getParamId() + NL;
+            case ARRAYREF:
+            case OBJECTREF:
+                return "aload " + ((ArrayType)operand.getType()).getNumDimensions() + NL;
+            // Add cases for other types as needed
+            default:
+                throw new IllegalArgumentException("Unsupported operand type: " + operand.getType().getTypeOfElement());
+        }
+    }
     private boolean usesResultOf(Instruction inst) {
         if (currentMethod == null) {
             return false;
@@ -377,7 +488,7 @@ public class JasminGenerator {
     private String invokeSpecial(CallInstruction callInstruction) {
         var code = new StringBuilder();
         code.append(generators.apply(callInstruction.getOperands().get(0)));
-        String className = getClassNameForElementType((ClassType)callInstruction.getCaller().getType());
+        String className = getClassNameForElementType((ClassType) callInstruction.getCaller().getType());
         code.append("invokespecial ").append(className).append("/<init>");
 
         code.append("(");
@@ -474,6 +585,20 @@ public class JasminGenerator {
         return code.append("\n").toString();
     }
 
+    private String generateArrayLength(Instruction arrayLengthInstruction) {
+        StringBuilder code = new StringBuilder();
+
+        // Assume arrayRefInstruction is an instruction that generates code to load the array reference onto the stack
+        Element arrayRefInstruction = ((UnaryOpInstruction) arrayLengthInstruction).getOperand();
+
+        // Generate code to load the array reference
+        code.append(generators.apply(arrayRefInstruction));
+
+        code.append("arraylength").append(NL);
+
+        return code.toString();
+    }
+
     private String generatePutField(PutFieldInstruction putFieldInstruction) {
         var code = new StringBuilder();
 
@@ -534,10 +659,6 @@ public class JasminGenerator {
                 }
             }
         }
-//
-//        if (name == null) {
-//            name = classType.getName(); // fallback to the simple name if not found in imports
-//        }
 
         return name.replace('.', '/');
     }
