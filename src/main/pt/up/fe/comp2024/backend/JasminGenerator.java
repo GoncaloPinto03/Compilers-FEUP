@@ -236,7 +236,7 @@ public class JasminGenerator {
         int limitsLocals = calculateLocalsLimit(method);
 
         // Add limits
-        code.append(TAB).append(".limit stack 99").append(NL);
+        code.append(TAB).append(".limit stack 98").append(NL);
         code.append(TAB).append(".limit locals ").append(limitsLocals).append(NL);
         var label = "";
         for (var inst : method.getInstructions()) {
