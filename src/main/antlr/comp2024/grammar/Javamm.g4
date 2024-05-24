@@ -97,7 +97,6 @@ expression
     : LPAREN expression RPAREN  #Parentesis
     | 'new' 'int' LRECT expression RRECT #ArrayDeclaration
     | 'new' value=(ID | 'main' | 'length') LPAREN (expression (',' expression) *)? RPAREN  #NewClass
-    | expression LRECT expression RRECT #arrayAccess
     | expression '.' value=(ID | 'main' | 'length')  LPAREN (expression (',' expression)*)? RPAREN #MethodCall
     | expression '.' 'length' #Length
     | 'this' #This
