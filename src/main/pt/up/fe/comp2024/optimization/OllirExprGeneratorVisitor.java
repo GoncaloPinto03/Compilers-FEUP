@@ -320,19 +320,14 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     private OllirExprResult visitArrayDeclaration(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
-        StringBuilder temp = new StringBuilder();
-
-        temp.append(OptUtils.getTemp()).append(" := .").append(OptUtils.toOllirType(node)).append(SPACE);
-        temp.append(visit(node.getJmmChild(0)).getCode()).append(END_STMT);
-
-
         code.append("new(array, ");
-        code.append(OptUtils.getCurrentTemp()).append(".i32");
+        code.append(visit(node.getJmmChild(0)).getCode());
         code.append(").array.");
         code.append(OptUtils.toOllirType(node));
 
-        return new OllirExprResult(temp.toString(), code.toString());
+        return new OllirExprResult(code.toString());
     }
+
 
     private OllirExprResult visitIntegerLiteral(JmmNode node, Void unused) {
         var intType = new Type(TypeUtils.getIntTypeName(), false);
