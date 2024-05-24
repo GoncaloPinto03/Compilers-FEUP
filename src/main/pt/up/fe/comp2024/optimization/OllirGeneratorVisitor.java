@@ -166,7 +166,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         // param
         if(name.equals("main")) {
             code.append("args.array.String");
-
         }
         else {
             var count = 0;
@@ -200,9 +199,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 continue;
             }
             if (child.getKind().equals("AssignStmt")) {
-                //var childCode = visit(child);
-                //code.append(childCode);
-                //exprVisitor.visit(child);
                 var x = exprVisitor.visit(child);
                 code.append(x.getComputation());
             }
@@ -236,6 +232,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         return code.toString();
     }
+
 
     private String visitClass(JmmNode node, Void unused) {
 
