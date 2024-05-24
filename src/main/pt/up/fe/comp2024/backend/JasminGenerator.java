@@ -273,7 +273,7 @@ public class JasminGenerator {
 //    }
 
 
-        private String generateAssign(AssignInstruction assign) {
+    private String generateAssign(AssignInstruction assign) {
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -281,6 +281,26 @@ public class JasminGenerator {
 
         // store value in the stack in destination
         var lhs = assign.getDest();
+        Instruction rhs = assign.getRhs();
+
+        if (rhs instanceof SingleOpInstruction && ((SingleOpInstruction) rhs).getSingleOperand().isLiteral()){
+            var literal = (LiteralElement) ((SingleOpInstruction) rhs).getSingleOperand();
+            if (literal.getType().getTypeOfElement() == ElementType.INT32) {
+                var value = Integer.parseInt(literal.getLiteral());
+                if (value >= 0 && value <= 5)
+                    code.append("iconst_" + value + NL);
+                else if (value >= -128 && value <= 127)
+                    code.append("bipush " + value + NL);
+                else if (value >= -32768 && value <= 32767)
+                    code.append("sipush " + value + NL);
+                else
+                    code.append("ldc " + value + NL);
+            }
+        }
+
+
+        var rhsType = rhs.getInstType();
+        System.out.println(rhsType);
 
         if (!(lhs instanceof Operand)) {
             throw new NotImplementedException(lhs.getClass());
@@ -293,8 +313,9 @@ public class JasminGenerator {
 
         switch (operand.getType().getTypeOfElement()) {
             case INT32, BOOLEAN -> code.append("istore ").append(reg).append(NL);
-            case STRING, OBJECTREF, ARRAYREF, CLASS, THIS -> code.append("astore ").append(reg).append(NL);
+            case STRING, OBJECTREF, CLASS, THIS -> code.append("astore ").append(reg).append(NL);
             case VOID -> code.append("store ").append(reg).append(NL);
+            case ARRAYREF -> code.append("astore ").append(reg).append(NL);
             default -> throw new NotImplementedException("Unsupported assign type: " + operand.getType().getTypeOfElement());
         }
 
@@ -425,8 +446,7 @@ public class JasminGenerator {
             case invokestatic -> code.append(invokeStatic(callInstruction));
             case invokeinterface -> code.append(invokeInterface(callInstruction));
             case arraylength -> {
-                // Load the array reference onto the stack
-                code.append(generateLoadOperand(operand));
+                code.append(generators.apply(callInstruction.getOperands().get(0)));
                 code.append("arraylength").append(NL);
             }
             case NEW -> {
